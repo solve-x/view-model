@@ -2,6 +2,9 @@
     "name": "view-model",
     "require": {
         "doctrine/annotations": "1.4",
+        "doctrine/orm": "^2.5"
+    },
+    "require-dev": {
         "phpunit/phpunit": "5.2"
     },
     "autoload": {
