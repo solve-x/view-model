@@ -1,0 +1,12 @@
+{
+    "name": "view-model",
+    "require": {
+        "doctrine/annotations": "1.4",
+        "phpunit/phpunit": "5.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "SolveX\\ViewModel\\": ""
+        }
+    }
+}
