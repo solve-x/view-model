@@ -1,6 +1,6 @@
 <?php
 
-use SolveX\ViewModel\DataAnnotations as VM;
+use SolveX\ViewModel\ValidationAnnotations as VM;
 
 class RegistrationViewModel extends SolveX\ViewModel\ViewModel
 {
