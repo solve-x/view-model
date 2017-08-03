@@ -10,18 +10,21 @@ Current proposal:
 namespace App\ViewModels;
 
 use SolveX\ViewModel\ViewModel;
-use SolveX\ViewModel\ValidationAnnotations as VM;
+use SolveX\ViewModel\Annotations as VM;
+use SolveX\ViewModel\Annotations\DataType;
 
 class RegistrationViewModel extends ViewModel
 {
     /**
      * @VM\Required
+     * @VM\DataType(DataType::String)
      * @var string
      */
     public $FirstName;
 
     /**
      * @VM\Min(18)
+     * @VM\DataType(DataType::Int)
      * @var int
      */
     public $Age;
