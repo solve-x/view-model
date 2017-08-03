@@ -6,7 +6,8 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use ReflectionClass;
 use ReflectionProperty;
-use SolveX\ViewModel\ValidationAnnotations\Required;
+use SolveX\ViewModel\Annotations\Annotation;
+use SolveX\ViewModel\Annotations\Required;
 
 class ViewModel
 {
@@ -36,11 +37,11 @@ class ViewModel
      */
     public function __autoload($class)
     {
-        $namespace = 'SolveX\ViewModel\ValidationAnnotations';
+        $namespace = 'SolveX\ViewModel\Annotations';
 
         if (strpos($class, $namespace) === 0) {
             $className = substr($class, strlen($namespace) + 1);
-            $file = __DIR__ . '/ValidationAnnotations/' . $className . '.php';
+            $file = __DIR__ . '/Annotations/' . $className . '.php';
             if (is_file($file)) {
                 require_once $file;
                 return true;
@@ -89,7 +90,7 @@ class ViewModel
     /**
      * Returns true when ValidationAnnotations\Required is among given $annotations.
      *
-     * @param ValidationAnnotations\ValidationAnnotation[] $annotations
+     * @param Annotation[] $annotations
      * @return bool
      */
     protected function containsRequiredAnnotation($annotations)
@@ -104,34 +105,46 @@ class ViewModel
     }
 
     /**
-     * @param ValidationAnnotations\ValidationAnnotation[] $annotations
+     * @param Annotation[] $annotations
      * @param ReflectionProperty $property
      * @param DataSourceInterface $data
      */
     protected function processAnnotations($annotations, $property, DataSourceInterface $data)
     {
+        $validationContext = new ValidationContext($data);
+        $propertyName = $property->getName();
+        $value = $data->get($propertyName);
+
         $validationSuccessful = true;
 
         foreach ($annotations as $annotation) {
-            $validationSuccessful = $validationSuccessful && $this->processAnnotation($annotation, $property, $data);
+            if (! $this->processAnnotation($annotation, $value, $validationContext)) {
+                $validationSuccessful = false;
+            }
         }
 
+        // If all annotations successfully validated
+        // the value being processed, we continue with the step 2:
+        // potential value transform (e.g. casting to int).
+        // Finally, we set the property value.
         if ($validationSuccessful) {
-            $propertyName = $property->getName();
-            $this->{$propertyName} = $data->get($propertyName);
+            foreach ($annotations as $annotation) {
+                $value = $annotation->transform($value);
+            }
+
+            $this->{$propertyName} = $value;
         }
     }
 
     /**
-     * @param ValidationAnnotations\ValidationAnnotation $annotation
-     * @param ReflectionProperty $property
-     * @param DataSourceInterface $data
+     * @param Annotation $annotation
+     * @param mixed $value
+     * @param ValidationContext $context
      * @return bool
      */
-    protected function processAnnotation($annotation, $property, DataSourceInterface $data)
+    protected function processAnnotation($annotation, $value, ValidationContext $context)
     {
-        $value = $data->get($property->getName());
-        $validationResult = $annotation->validate($value, $data, $property);
+        $validationResult = $annotation->validate($value, $context);
 
         if (! $validationResult->isOk()) {
             $this->IsValid = false;

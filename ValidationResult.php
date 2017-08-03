@@ -5,27 +5,34 @@ namespace SolveX\ViewModel;
 class ValidationResult
 {
     /**
+     * Validation successful flag.
+     *
      * @var bool
      */
     private $ok = false;
 
     /**
-     * @var array
+     * @var string
      */
-    private $errors = [];
+    private $error = null;
 
     /**
      * Private ValidationResult constructor.
      *
      * @param bool $ok
-     * @param array $errors
+     * @param string $error
      */
-    private function __construct($ok, $errors = [])
+    private function __construct($ok, $error = null)
     {
         $this->ok = $ok;
-        $this->errors = $errors;
+        $this->error = $error;
     }
 
+    /**
+     * Returns true in case validation was successful.
+     *
+     * @return bool
+     */
     public function isOk()
     {
         return $this->ok;
@@ -41,8 +48,14 @@ class ValidationResult
         return new self(true);
     }
 
-    public static function WithErrors($errors)
+    /**
+     * Factory method. Validation failed.
+     *
+     * @param string $error
+     * @return ValidationResult
+     */
+    public static function NotOk($error)
     {
-        return new self(false, $errors);
+        return new self(false, $error);
     }
 }

@@ -1,6 +1,9 @@
 <?php
 
+use Carbon\Carbon;
+
 require __DIR__ . '/RegistrationViewModel.php';
+require __DIR__ . '/ApiTokenViewModel.php';
 require __DIR__ . '/Request.php';
 
 class ViewModelTest extends PHPUnit_Framework_TestCase
@@ -10,18 +13,18 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 19,
+            'Age' => '19',
             'Password' => 'my password',
             'RepeatedPassword' => 'my password',
         ]));
 
         $this->assertTrue($model->IsValid);
 
-        $this->assertEquals('Jack', $model->FirstName);
-        $this->assertEquals('Smith', $model->LastName);
-        $this->assertEquals(19, $model->Age);
-        $this->assertEquals('my password', $model->Password);
-        $this->assertEquals('my password', $model->RepeatedPassword);
+        $this->assertSame('Jack', $model->FirstName);
+        $this->assertSame('Smith', $model->LastName);
+        $this->assertSame(19, $model->Age);
+        $this->assertSame('my password', $model->Password);
+        $this->assertSame('my password', $model->RepeatedPassword);
     }
 
     public function test_not_required()
@@ -41,9 +44,9 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
     public function test_min_annotation()
     {
         $tests = [
-            ['Age' => 15, 'Valid' => false],
-            ['Age' => 18, 'Valid' => true],
-            ['Age' => 19, 'Valid' => true],
+            ['Age' => '15', 'Valid' => false],
+            ['Age' => '18', 'Valid' => true],
+            ['Age' => '19', 'Valid' => true],
         ];
 
         foreach ($tests as $test) {
@@ -82,7 +85,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 18,
+            'Age' => '18',
             'Password' => 'my password',
             'RepeatedPassword' => 'my password',
         ]));
@@ -92,7 +95,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 18,
+            'Age' => '18',
             'Password' => 'my password',
             'RepeatedPassword' => 'password typo',
         ]));
@@ -106,12 +109,24 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 18,
+            'Age' => '18',
             'Password' => 'my',
             'RepeatedPassword' => 'my',
         ]));
 
         $this->assertFalse($model->IsValid);
         $this->assertNull($model->Password);
+    }
+
+    public function test_carbon()
+    {
+        $model = new ApiTokenViewModel(new Request([
+            'Value' => '0987654321234567',
+            'ValidFrom' => '2017-06-01',
+        ]));
+
+        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->ValidFrom instanceof Carbon);
+        $this->assertEquals($model->ValidFrom, new Carbon('2017-06-01'));
     }
 }
