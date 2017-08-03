@@ -4,6 +4,7 @@ use Carbon\Carbon;
 
 require __DIR__ . '/RegistrationViewModel.php';
 require __DIR__ . '/ApiTokenViewModel.php';
+require __DIR__ . '/AfterViewModel.php';
 require __DIR__ . '/Request.php';
 
 class ViewModelTest extends PHPUnit_Framework_TestCase
@@ -136,8 +137,45 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
     public function test_throwable_viewmodel()
     {
         new ApiTokenViewModel(new Request([
-            'Value' => 'asdas',
+            'Value' => 'too short',
             'ValidFrom' => '2017-06-01',
         ]));
+    }
+
+    /**
+     * @expectedException \SolveX\ViewModel\ValidationException
+     */
+    public function test_throwable_viewmodel_invalid_date_format()
+    {
+        new ApiTokenViewModel(new Request([
+            'Value' => '0987654321234567',
+            'ValidFrom' => '1.6.2017',
+        ]));
+    }
+
+    public function test_after()
+    {
+        $model = new AfterViewModel(new Request([
+            'DateOfArrival' => '2017-06-03 08:00:00',
+        ]));
+
+        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->DateOfArrival instanceof Carbon);
+        $this->assertEquals($model->DateOfArrival, new Carbon('2017-06-03 08:00:00'));
+
+        $model = new AfterViewModel(new Request([
+            'DateOfArrival' => '2017-01-01',
+        ]));
+
+        // Invalid date format.
+        $this->assertFalse($model->IsValid);
+        $this->assertNull($model->DateOfArrival);
+
+        $model = new AfterViewModel(new Request([
+            'DateOfArrival' => '3.6.2017',
+        ]));
+
+        $this->assertFalse($model->IsValid);
+        $this->assertNull($model->DateOfArrival);
     }
 }
