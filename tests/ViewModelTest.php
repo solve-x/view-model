@@ -5,6 +5,7 @@ use Carbon\Carbon;
 require __DIR__ . '/RegistrationViewModel.php';
 require __DIR__ . '/ApiTokenViewModel.php';
 require __DIR__ . '/AfterViewModel.php';
+require __DIR__ . '/InViewModel.php';
 require __DIR__ . '/Request.php';
 
 class ViewModelTest extends PHPUnit_Framework_TestCase
@@ -177,5 +178,22 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
 
         $this->assertFalse($model->IsValid);
         $this->assertNull($model->DateOfArrival);
+    }
+
+    public function test_in()
+    {
+        $model = new InViewModel(new Request([
+            'Place' => 'New York',
+        ]));
+
+        $this->assertTrue($model->IsValid);
+        $this->assertSame($model->Place, 'New York');
+
+        $model = new InViewModel(new Request([
+            'Place' => 'Tokyo',
+        ]));
+
+        $this->assertFalse($model->IsValid);
+        $this->assertNull($model->Place);
     }
 }
