@@ -129,4 +129,15 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($model->ValidFrom instanceof Carbon);
         $this->assertEquals($model->ValidFrom, new Carbon('2017-06-01'));
     }
+
+    /**
+     * @expectedException \SolveX\ViewModel\ValidationException
+     */
+    public function test_throwable_viewmodel()
+    {
+        new ApiTokenViewModel(new Request([
+            'Value' => 'asdas',
+            'ValidFrom' => '2017-06-01',
+        ]));
+    }
 }

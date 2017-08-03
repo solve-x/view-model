@@ -3,9 +3,9 @@
 use Carbon\Carbon;
 use SolveX\ViewModel\Annotations as VM;
 use SolveX\ViewModel\Annotations\DataType;
-use SolveX\ViewModel\ViewModel;
+use SolveX\ViewModel\ThrowableViewModel;
 
-class ApiTokenViewModel extends ViewModel
+class ApiTokenViewModel extends ThrowableViewModel
 {
     /**
      * @VM\Required
