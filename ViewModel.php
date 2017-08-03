@@ -88,7 +88,7 @@ class ViewModel
     }
 
     /**
-     * Returns true when ValidationAnnotations\Required is among given $annotations.
+     * Returns true when Annotations\Required is among given $annotations.
      *
      * @param Annotation[] $annotations
      * @return bool
