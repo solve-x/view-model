@@ -33,10 +33,25 @@ function register_annotation_autoloader_once()
 class ViewModel
 {
     /**
+     * A flag that indicates whether or not validation was passed.
+     *
      * @var bool
      */
     public $IsValid = false;
 
+    /**
+     * An associative array (mapping property names to arrays of errors)
+     * that is filled if validation failed.
+     *
+     * @var array
+     */
+    public $Errors = [];
+
+    /**
+     * ViewModel constructor.
+     *
+     * @param DataSourceInterface|null $data
+     */
     public function __construct(DataSourceInterface $data = null)
     {
         // $data is null when a viewmodel class (extending this one) was
@@ -142,7 +157,7 @@ class ViewModel
         $validationSuccessful = true;
 
         foreach ($annotations as $annotation) {
-            if (! $this->processAnnotation($annotation, $value, $validationContext)) {
+            if (! $this->processAnnotation($annotation, $propertyName, $value, $validationContext)) {
                 $validationSuccessful = false;
             }
         }
@@ -161,16 +176,20 @@ class ViewModel
     }
 
     /**
+     * Runs the validation of a particular annotation.
+     *
      * @param Annotation $annotation
+     * @param string $propertyName
      * @param mixed $value
      * @param ValidationContext $context
      * @return bool
      */
-    protected function processAnnotation($annotation, $value, ValidationContext $context)
+    protected function processAnnotation($annotation, $propertyName, $value, ValidationContext $context)
     {
         $validationResult = $annotation->validate($value, $context);
 
         if (! $validationResult->isOk()) {
+            $this->Errors[$propertyName][] = $validationResult->getError();
             $this->IsValid = false;
             return false;
         }

@@ -82,6 +82,23 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertNull($model->Age);
     }
 
+    public function test_invalid_property_errors()
+    {
+        $model = new RegistrationViewModel(new Request([
+            'FirstName' => 'Jack',
+            'LastName' => 'Smith',
+            'Age' => 15,
+            'Password' => 'my password',
+            'RepeatedPassword' => 'my password',
+        ]));
+
+        $this->assertFalse($model->IsValid);
+        $this->assertArrayHasKey('Age', $model->Errors);
+        $this->assertCount(2, $model->Errors['Age']);
+        $this->assertEquals('Value not an int!', $model->Errors['Age'][0]);
+        $this->assertEquals('Value less than min required!', $model->Errors['Age'][1]);
+    }
+
     public function test_compare_annotation()
     {
         $model = new RegistrationViewModel(new Request([

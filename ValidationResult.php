@@ -12,7 +12,7 @@ class ValidationResult
     private $ok = false;
 
     /**
-     * @var string
+     * @var string|null
      */
     private $error = null;
 
@@ -36,6 +36,16 @@ class ValidationResult
     public function isOk()
     {
         return $this->ok;
+    }
+
+    /**
+     * Returns the error (string) or null.
+     *
+     * @return string
+     */
+    public function getError()
+    {
+        return $this->error;
     }
 
     /**
