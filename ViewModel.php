@@ -9,8 +9,32 @@ use ReflectionProperty;
 use SolveX\ViewModel\Annotations\Annotation;
 use SolveX\ViewModel\Annotations\Required;
 
+/**
+ * See ViewModel::registerAnnotationAutoloader().
+ * This function is used because "static" variables
+ * have their own identities in extended classes.
+ */
+function register_annotation_autoloader_once()
+{
+    static $autoloaderRegistered = false;
+
+    if (! $autoloaderRegistered) {
+        AnnotationRegistry::registerLoader('class_exists');
+        $autoloaderRegistered = true;
+    }
+}
+
+/**
+ * Class ViewModel.
+ *
+ * <code>
+ * </code>
+ */
 class ViewModel
 {
+    /**
+     * @var bool
+     */
     public $IsValid = false;
 
     public function __construct(DataSourceInterface $data = null)
@@ -18,37 +42,34 @@ class ViewModel
         // $data is null when a viewmodel class (extending this one) was
         // instantiated manually with new MyViewModel().
         // In this case we do nothing.
+        // This is useful for testing.
         if ($data === null) {
             return;
         }
 
-        AnnotationRegistry::registerLoader([$this, '__autoload']); // TODO: figure out if this loader is necessary!
+        $this->registerAnnotationAutoloader();
 
         $this->IsValid = true;
         $properties = $this->getProperties();
-        $this->setAndValidateProperties($data, $properties);
+        $this->validateAndSetProperties($data, $properties);
     }
 
     /**
-     * Internal autoloader for annotations.
+     * Doctrine Annotations library uses its own autoloading mechanism.
+     * Here we use a suggestion from the library's source code and just pass
+     * the autoloading to class_exists built-in function which results in composer doing
+     * the actual loading.
      *
-     * @param string $class
-     * @return bool
+     * Registration is done only once.
+     *
+     * See
+     * http://docs.doctrine-project.org/projects/doctrine-common/en/latest/reference/annotations.html#introduction
+     * and
+     * https://tinyurl.com/y83wvpcx
      */
-    public function __autoload($class)
+    protected function registerAnnotationAutoloader()
     {
-        $namespace = 'SolveX\ViewModel\Annotations';
-
-        if (strpos($class, $namespace) === 0) {
-            $className = substr($class, strlen($namespace) + 1);
-            $file = __DIR__ . '/Annotations/' . $className . '.php';
-            if (is_file($file)) {
-                require_once $file;
-                return true;
-            }
-        }
-
-        return false;
+        register_annotation_autoloader_once();
     }
 
     /**
@@ -63,10 +84,13 @@ class ViewModel
     }
 
     /**
+     * Retrieves annotations for each property,
+     * and processes those annotations.
+     *
      * @param DataSourceInterface $data
      * @param ReflectionProperty[] $properties
      */
-    protected function setAndValidateProperties(DataSourceInterface $data, $properties)
+    protected function validateAndSetProperties(DataSourceInterface $data, $properties)
     {
         $reader = new AnnotationReader();
 
