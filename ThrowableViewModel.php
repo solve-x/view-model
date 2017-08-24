@@ -8,7 +8,7 @@ class ThrowableViewModel extends ViewModel
     {
         parent::__construct($data);
 
-        if (! $this->IsValid) {
+        if (! $this->isValid()) {
             throw new ValidationException('Validation failed!');
         }
     }

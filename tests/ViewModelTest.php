@@ -8,6 +8,8 @@ require __DIR__ . '/AfterViewModel.php';
 require __DIR__ . '/InViewModel.php';
 require __DIR__ . '/Request.php';
 
+use Illuminate\Translation\Translator;
+
 class ViewModelTest extends PHPUnit_Framework_TestCase
 {
     public function test_properties_are_set()
@@ -20,7 +22,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'my password',
         ]));
 
-        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->isValid());
 
         $this->assertSame('Jack', $model->FirstName);
         $this->assertSame('Smith', $model->LastName);
@@ -39,7 +41,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'my password',
         ]));
 
-        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->isValid());
         $this->assertNull($model->Age);
     }
 
@@ -61,9 +63,9 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             ]));
 
             if ($test['Valid']) {
-                $this->assertTrue($model->IsValid);
+                $this->assertTrue($model->isValid());
             } else {
-                $this->assertFalse($model->IsValid);
+                $this->assertFalse($model->isValid());
             }
         }
     }
@@ -78,7 +80,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'my password',
         ]));
 
-        $this->assertFalse($model->IsValid);
+        $this->assertFalse($model->isValid());
         $this->assertNull($model->Age);
     }
 
@@ -92,11 +94,34 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'my password',
         ]));
 
-        $this->assertFalse($model->IsValid);
-        $this->assertArrayHasKey('Age', $model->Errors);
-        $this->assertCount(2, $model->Errors['Age']);
-        $this->assertEquals('Value not an int!', $model->Errors['Age'][0]);
-        $this->assertEquals('Value less than min required!', $model->Errors['Age'][1]);
+        $this->assertFalse($model->isValid());
+        $errors = $model->getErrors();
+        $this->assertArrayHasKey('Age', $errors);
+        $this->assertCount(2, $errors['Age']);
+        $this->assertEquals('Value not an int!', $errors['Age'][0]);
+        $this->assertEquals('Value less than min required!', $errors['Age'][1]);
+    }
+
+    public function test_invalid_property_translated_errors()
+    {
+        $translator = Mockery::mock(Translator::class);
+        $translator->shouldReceive('trans')
+            ->andReturnValues(['Vrednost ni število!', 'Vrednost manj od zahtevane!']);
+
+        $model = new RegistrationViewModel(new Request([
+            'FirstName' => 'Jack',
+            'LastName' => 'Smith',
+            'Age' => 15,
+            'Password' => 'my password',
+            'RepeatedPassword' => 'my password',
+        ]), $translator);
+
+        $this->assertFalse($model->isValid());
+        $errors = $model->getErrors();
+        $this->assertArrayHasKey('Age', $errors);
+        $this->assertCount(2, $errors['Age']);
+        $this->assertEquals('Vrednost ni število!', $errors['Age'][0]);
+        $this->assertEquals('Vrednost manj od zahtevane!', $errors['Age'][1]);
     }
 
     public function test_compare_annotation()
@@ -109,7 +134,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'my password',
         ]));
 
-        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->isValid());
 
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
@@ -119,7 +144,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'password typo',
         ]));
 
-        $this->assertFalse($model->IsValid);
+        $this->assertFalse($model->isValid());
         $this->assertNull($model->RepeatedPassword);
     }
 
@@ -133,7 +158,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'RepeatedPassword' => 'my',
         ]));
 
-        $this->assertFalse($model->IsValid);
+        $this->assertFalse($model->isValid());
         $this->assertNull($model->Password);
     }
 
@@ -144,7 +169,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'ValidFrom' => '2017-06-01',
         ]));
 
-        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->isValid());
         $this->assertTrue($model->ValidFrom instanceof Carbon);
         $this->assertEquals($model->ValidFrom, new Carbon('2017-06-01'));
     }
@@ -177,7 +202,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'DateOfArrival' => '2017-06-03 08:00:00',
         ]));
 
-        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->isValid());
         $this->assertTrue($model->DateOfArrival instanceof Carbon);
         $this->assertEquals($model->DateOfArrival, new Carbon('2017-06-03 08:00:00'));
 
@@ -186,14 +211,14 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         ]));
 
         // Invalid date format.
-        $this->assertFalse($model->IsValid);
+        $this->assertFalse($model->isValid());
         $this->assertNull($model->DateOfArrival);
 
         $model = new AfterViewModel(new Request([
             'DateOfArrival' => '3.6.2017',
         ]));
 
-        $this->assertFalse($model->IsValid);
+        $this->assertFalse($model->isValid());
         $this->assertNull($model->DateOfArrival);
     }
 
@@ -203,14 +228,14 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'Place' => 'New York',
         ]));
 
-        $this->assertTrue($model->IsValid);
+        $this->assertTrue($model->isValid());
         $this->assertSame($model->Place, 'New York');
 
         $model = new InViewModel(new Request([
             'Place' => 'Tokyo',
         ]));
 
-        $this->assertFalse($model->IsValid);
+        $this->assertFalse($model->isValid());
         $this->assertNull($model->Place);
     }
 }

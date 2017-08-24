@@ -17,15 +17,21 @@ class ValidationResult
     private $error = null;
 
     /**
+     * @var array
+     */
+    private $replacements = [];
+
+    /**
      * Private ValidationResult constructor.
      *
      * @param bool $ok
      * @param string $error
      */
-    private function __construct($ok, $error = null)
+    private function __construct($ok, $error = null, $replacements = [])
     {
         $this->ok = $ok;
         $this->error = $error;
+        $this->replacements = $replacements;
     }
 
     /**
@@ -39,13 +45,14 @@ class ValidationResult
     }
 
     /**
-     * Returns the error (string) or null.
+     * Returns the error (string) together with replacements
+     * (inserted into the error string during translation).
      *
-     * @return string
+     * @return array
      */
-    public function getError()
+    public function getErrorWithReplacements()
     {
-        return $this->error;
+        return [$this->error, $this->replacements];
     }
 
     /**
@@ -62,10 +69,11 @@ class ValidationResult
      * Factory method. Validation failed.
      *
      * @param string $error
+     * @param array $replacements
      * @return ValidationResult
      */
-    public static function NotOk($error)
+    public static function NotOk($error, $replacements = [])
     {
-        return new self(false, $error);
+        return new self(false, $error, $replacements);
     }
 }

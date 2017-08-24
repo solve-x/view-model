@@ -42,10 +42,13 @@ class UserController
 {
     public function register(RegistrationViewModel $model)
     {
-        if ($model->IsValid) {
-            // $model->FirstName
-            // $model->Age
+        if (! $model->isValid()) {
+            $errors = $model->getErrors();
+            // Respond with errors.
         }
+
+        // $model->FirstName
+        // $model->Age
     }
 }
 ```

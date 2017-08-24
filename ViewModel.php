@@ -2,10 +2,11 @@
 
 namespace SolveX\ViewModel;
 
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
 use ReflectionClass;
 use ReflectionProperty;
+use Illuminate\Contracts\Translation\Translator;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
 use SolveX\ViewModel\Annotations\Annotation;
 use SolveX\ViewModel\Annotations\Required;
 
@@ -27,17 +28,15 @@ function register_annotation_autoloader_once()
 /**
  * Class ViewModel.
  *
- * <code>
- * </code>
  */
 class ViewModel
 {
     /**
-     * A flag that indicates whether or not validation was passed.
+     * A flag that indicates whether or not validation passed.
      *
      * @var bool
      */
-    public $IsValid = false;
+    protected $isValid = false;
 
     /**
      * An associative array (mapping property names to arrays of errors)
@@ -45,14 +44,25 @@ class ViewModel
      *
      * @var array
      */
-    public $Errors = [];
+    protected $errors = [];
+
+    /**
+     * @var Translator|null
+     */
+    protected $translator = null;
+
+    /**
+     * @var DataSourceInterface|null
+     */
+    protected $data = null;
 
     /**
      * ViewModel constructor.
      *
      * @param DataSourceInterface|null $data
+     * @param Translator|null $translator
      */
-    public function __construct(DataSourceInterface $data = null)
+    public function __construct(DataSourceInterface $data = null, Translator $translator = null)
     {
         // $data is null when a viewmodel class (extending this one) was
         // instantiated manually with new MyViewModel().
@@ -62,11 +72,32 @@ class ViewModel
             return;
         }
 
-        $this->registerAnnotationAutoloader();
+        $this->translator = $translator;
+        $this->data = $data;
+        $this->isValid = true;
 
-        $this->IsValid = true;
-        $properties = $this->getProperties();
-        $this->validateAndSetProperties($data, $properties);
+        $this->registerAnnotationAutoloader();
+        $this->validateAndSetProperties();
+    }
+
+    /**
+     * Returns true if validation succeeded.
+     *
+     * @return bool
+     */
+    public function isValid()
+    {
+        return $this->isValid;
+    }
+
+    /**
+     * Returns an associative array of errors.
+     *
+     * @return array
+     */
+    public function getErrors()
+    {
+        return $this->errors;
     }
 
     /**
@@ -101,28 +132,26 @@ class ViewModel
     /**
      * Retrieves annotations for each property,
      * and processes those annotations.
-     *
-     * @param DataSourceInterface $data
-     * @param ReflectionProperty[] $properties
      */
-    protected function validateAndSetProperties(DataSourceInterface $data, $properties)
+    protected function validateAndSetProperties()
     {
+        $properties = $this->getProperties();
         $reader = new AnnotationReader();
 
         foreach ($properties as $property) {
             $annotations = $reader->getPropertyAnnotations($property);
             $required = $this->containsRequiredAnnotation($annotations);
-            $present = $data->has($property->getName());
+            $present = $this->data->has($property->getName());
 
             if (! $present) {
                 if ($required) {
-                    $this->IsValid = false;
+                    $this->isValid = false;
                 }
 
                 continue;
             }
 
-            $this->processAnnotations($annotations, $property, $data);
+            $this->processAnnotations($annotations, $property);
         }
     }
 
@@ -146,13 +175,12 @@ class ViewModel
     /**
      * @param Annotation[] $annotations
      * @param ReflectionProperty $property
-     * @param DataSourceInterface $data
      */
-    protected function processAnnotations($annotations, $property, DataSourceInterface $data)
+    protected function processAnnotations($annotations, $property)
     {
-        $validationContext = new ValidationContext($data);
+        $validationContext = new ValidationContext($this->data);
         $propertyName = $property->getName();
-        $value = $data->get($propertyName);
+        $value = $this->data->get($propertyName);
 
         $validationSuccessful = true;
 
@@ -189,11 +217,28 @@ class ViewModel
         $validationResult = $annotation->validate($value, $context);
 
         if (! $validationResult->isOk()) {
-            $this->Errors[$propertyName][] = $validationResult->getError();
-            $this->IsValid = false;
+            list($error, $replacements) = $validationResult->getErrorWithReplacements();
+            $this->errors[$propertyName][] = $this->getErrorTranslation($error, $replacements);
+            $this->isValid = false;
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Translates validation error.
+     *
+     * @param string $error
+     * @param array $replacements
+     * @return string
+     */
+    protected function getErrorTranslation($error, $replacements)
+    {
+        if ($this->translator === null) {
+            return $error;
+        }
+
+        return $this->translator->trans($error, $replacements);
     }
 }
