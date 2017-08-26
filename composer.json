@@ -1,5 +1,16 @@
 {
-    "name": "view-model",
+    "name": "solve-x/view-model",
+    "type": "library",
+    "description": "Port of ASP.NET Core model validation to PHP.",
+    "keywords": [
+        "validation"
+    ],
+    "authors": [
+        {
+            "name": "Matej Drame",
+            "email": "matej.drame@solve-x.net"
+        }
+    ],
     "require": {
         "doctrine/annotations": "1.4",
         "nesbot/carbon": "1.22.1",
