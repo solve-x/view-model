@@ -23,12 +23,12 @@ class DataType extends Annotation
     public function validate($value, ValidationContext $context)
     {
         switch ($this->Type) {
-            case DataType::String: return $this->validateString($value);
-            case DataType::Int: return $this->validateInt($value);
-            case DataType::Float: return $this->validateFloat($value);
-            case DataType::Bool: return $this->validateBool($value);
-            case DataType::Carbon: return $this->validateCarbon($value);
-        };
+            case static::String: return $this->validateString($value);
+            case static::Int: return $this->validateInt($value);
+            case static::Float: return $this->validateFloat($value);
+            case static::Bool: return $this->validateBool($value);
+            case static::Carbon: return $this->validateCarbon($value);
+        }
 
         throw new RuntimeException('Unexpected DataType!');
     }
@@ -42,27 +42,27 @@ class DataType extends Annotation
     {
         if (ctype_digit($value)) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value not an int!');
         }
+
+        return ValidationResult::NotOk('Value not an int!');
     }
 
     private function validateFloat($value)
     {
         if (is_numeric($value)) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value not a float!');
         }
+
+        return ValidationResult::NotOk('Value not a float!');
     }
 
     private function validateBool($value)
     {
         if ($value === '0' || $value === '1') {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value not a bool!');
         }
+
+        return ValidationResult::NotOk('Value not a bool!');
     }
 
     /**
@@ -80,28 +80,29 @@ class DataType extends Annotation
 
         if (preg_match($regex, $value) > 0) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value does not match ISO 8601 date format!');
         }
+
+        return ValidationResult::NotOk('Value does not match ISO 8601 date format!');
     }
 
     /**
      * @inheritdoc
+     * @throws \RuntimeException
      */
     public function transform($value)
     {
         switch ($this->Type) {
-            case DataType::String: return $value;
-            case DataType::Int: return (int) $value;
-            case DataType::Float: return (float) $value;
-            case DataType::Bool: return (
+            case static::String: return $value;
+            case static::Int: return (int) $value;
+            case static::Float: return (float) $value;
+            case static::Bool: return (
                 '1' === $value ||
                 'on' === $value ||
                 'true' === $value ||
                 'yes' === $value
             );
-            case DataType::Carbon: return Carbon::parse($value);
-        };
+            case static::Carbon: return Carbon::parse($value);
+        }
 
         throw new RuntimeException('Unexpected DataType!');
     }
