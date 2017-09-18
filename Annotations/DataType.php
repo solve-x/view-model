@@ -94,7 +94,12 @@ class DataType extends Annotation
             case DataType::String: return $value;
             case DataType::Int: return (int) $value;
             case DataType::Float: return (float) $value;
-            case DataType::Bool: return ($value === '1');
+            case DataType::Bool: return (
+                '1' === $value ||
+                'on' === $value ||
+                'true' === $value ||
+                'yes' === $value
+            );
             case DataType::Carbon: return Carbon::parse($value);
         };
 
