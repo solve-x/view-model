@@ -1,7 +1,7 @@
 {
     "name": "solve-x/view-model",
     "type": "library",
-    "description": "Port of ASP.NET Core model validation to PHP.",
+    "description": "PHP model validation inspired by ASP.NET",
     "keywords": [
         "validation"
     ],
