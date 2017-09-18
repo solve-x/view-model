@@ -43,4 +43,10 @@ class RegistrationViewModel extends ViewModel
      * @var string
      */
     public $RepeatedPassword;
+
+    /**
+     * @VM\DataType(DataType::Bool)
+     * @var boolean
+     */
+    public $RememberMe;
 }

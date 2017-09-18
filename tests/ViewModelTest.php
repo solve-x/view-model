@@ -20,6 +20,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             'Age' => '19',
             'Password' => 'my password',
             'RepeatedPassword' => 'my password',
+            'RememberMe' => 'on',
         ]));
 
         $this->assertTrue($model->isValid());
@@ -29,6 +30,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertSame(19, $model->Age);
         $this->assertSame('my password', $model->Password);
         $this->assertSame('my password', $model->RepeatedPassword);
+        $this->assertSame(true, $model->RememberMe);
     }
 
     public function test_not_required()

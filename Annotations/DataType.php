@@ -58,7 +58,11 @@ class DataType extends Annotation
 
     private function validateBool($value)
     {
-        if ($value === '0' || $value === '1') {
+        $booleanStrings = [
+            '0', '1', 'on', 'off', 'yes', 'no', 'true', 'false'
+        ];
+
+        if (in_array($value, $booleanStrings, true)) {
             return ValidationResult::Ok();
         }
 
