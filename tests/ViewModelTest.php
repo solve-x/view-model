@@ -33,6 +33,26 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertSame(true, $model->RememberMe);
     }
 
+    public function test_boolean()
+    {
+        $model = new RegistrationViewModel(new Request([
+            'FirstName' => 'Jack',
+            'LastName' => 'Smith',
+            'Age' => '19',
+            'Password' => 'my password',
+            'RepeatedPassword' => 'my password',
+        ]));
+
+        $this->assertTrue($model->isValid());
+
+        $this->assertSame('Jack', $model->FirstName);
+        $this->assertSame('Smith', $model->LastName);
+        $this->assertSame(19, $model->Age);
+        $this->assertSame('my password', $model->Password);
+        $this->assertSame('my password', $model->RepeatedPassword);
+        $this->assertSame(false, $model->RememberMe);
+    }
+
     public function test_not_required()
     {
         $model = new RegistrationViewModel(new Request([

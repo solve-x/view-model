@@ -8,6 +8,7 @@ use Illuminate\Contracts\Translation\Translator;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use SolveX\ViewModel\Annotations\Annotation;
+use SolveX\ViewModel\Annotations\DataType;
 use SolveX\ViewModel\Annotations\Required;
 
 /**
@@ -142,16 +143,28 @@ class ViewModel
             $annotations = $reader->getPropertyAnnotations($property);
             $required = $this->containsRequiredAnnotation($annotations);
             $present = $this->data->has($property->getName());
+            $propertyName = $property->getName();
+            $isAbsentBoolean = false;
 
             if (! $present) {
-                if ($required) {
+                if ($this->containsBoolTypeAnnotation($annotations)) {
+                    $isAbsentBoolean = true;
+                } else if ($required) {
                     $this->isValid = false;
+                    continue;
+                } else {
+                    continue;
                 }
-
-                continue;
             }
 
-            $this->processAnnotations($annotations, $property);
+            $value = $isAbsentBoolean ? 'false' :
+                $this->data->get($propertyName);
+
+            $this->processAnnotations(
+                $annotations,
+                $propertyName,
+                $value
+            );
         }
     }
 
@@ -173,14 +186,31 @@ class ViewModel
     }
 
     /**
+     * Returns true when Annotations\DataType Bool is among given $annotations.
+     *
      * @param Annotation[] $annotations
-     * @param ReflectionProperty $property
+     * @return bool
      */
-    protected function processAnnotations($annotations, $property)
+    protected function containsBoolTypeAnnotation($annotations)
+    {
+        foreach ($annotations as $annotation) {
+            if ($annotation instanceof DataType &&
+                DataType::Bool === $annotation->Type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Annotation[] $annotations
+     * @param string $propertyName
+     * @param string $value
+     */
+    protected function processAnnotations($annotations, $propertyName, $value)
     {
         $validationContext = new ValidationContext($this->data);
-        $propertyName = $property->getName();
-        $value = $this->data->get($propertyName);
 
         $validationSuccessful = true;
 
