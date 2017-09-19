@@ -4,6 +4,7 @@ use Carbon\Carbon;
 
 require __DIR__ . '/RegistrationViewModel.php';
 require __DIR__ . '/ApiTokenViewModel.php';
+require __DIR__ . '/ArraysViewModel.php';
 require __DIR__ . '/AfterViewModel.php';
 require __DIR__ . '/InViewModel.php';
 require __DIR__ . '/Request.php';
@@ -30,7 +31,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertSame(19, $model->Age);
         $this->assertSame('my password', $model->Password);
         $this->assertSame('my password', $model->RepeatedPassword);
-        $this->assertSame(true, $model->RememberMe);
+        $this->assertTrue($model->RememberMe);
     }
 
     public function test_boolean()
@@ -50,7 +51,35 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertSame(19, $model->Age);
         $this->assertSame('my password', $model->Password);
         $this->assertSame('my password', $model->RepeatedPassword);
-        $this->assertSame(false, $model->RememberMe);
+        $this->assertFalse($model->RememberMe);
+    }
+
+    public function test_array_data_type()
+    {
+        $model = new ArraysViewModel(new Request([
+            'IdsArray' => ['1', '2', '-3'],
+            'PricesArray' => ['1.2', '3.4', '-5.6'],
+            'NamesArray' => ['Jack', 'Joe', 'Jane', '']
+        ]));
+
+        $this->assertTrue($model->isValid());
+
+        $this->assertCount(3, $model->IdsArray);
+        $this->assertCount(3, $model->PricesArray);
+        $this->assertCount(4, $model->NamesArray);
+
+        $this->assertSame(1, $model->IdsArray[0]);
+        $this->assertSame(2, $model->IdsArray[1]);
+        $this->assertSame(-3, $model->IdsArray[2]);
+
+        $this->assertSame(1.2, $model->PricesArray[0]);
+        $this->assertSame(3.4, $model->PricesArray[1]);
+        $this->assertSame(-5.6, $model->PricesArray[2]);
+
+        $this->assertSame('Jack', $model->NamesArray[0]);
+        $this->assertSame('Joe', $model->NamesArray[1]);
+        $this->assertSame('Jane', $model->NamesArray[2]);
+        $this->assertSame('', $model->NamesArray[3]);
     }
 
     public function test_not_required()
@@ -120,7 +149,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $errors = $model->getErrors();
         $this->assertArrayHasKey('Age', $errors);
         $this->assertCount(2, $errors['Age']);
-        $this->assertEquals('Value not an int!', $errors['Age'][0]);
+        $this->assertEquals('Input not a string!', $errors['Age'][0]);
         $this->assertEquals('Value less than min required!', $errors['Age'][1]);
     }
 
