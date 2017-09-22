@@ -28,7 +28,7 @@ class KeyValueDataSource implements DataSourceInterface
      */
     public function has($key)
     {
-        return array_has($this->data, $key);
+        return array_key_exists($key, $this->data);
     }
 
     /**

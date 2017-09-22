@@ -1,7 +1,5 @@
 <?php
 
-namespace SolveX\ViewModel\tests;
-
 use SolveX\ViewModel\KeyValueDataSource;
 
 class DataSourceTest extends \PHPUnit_Framework_TestCase

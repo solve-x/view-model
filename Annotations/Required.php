@@ -10,10 +10,20 @@ use SolveX\ViewModel\ValidationResult;
  */
 class Required extends Annotation
 {
+    /**
+     * @var bool
+     */
     public $AllowEmptyStrings = false;
 
+    /**
+     * @var bool
+     */
     public $AllowEmptyArrays = false;
 
+    /**
+     * @inheritdoc
+     * @throws \InvalidArgumentException
+     */
     public function validate($value, ValidationContext $context)
     {
         if (is_array($value)) {
