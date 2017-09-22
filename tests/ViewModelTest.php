@@ -2,12 +2,12 @@
 
 use Carbon\Carbon;
 
-require __DIR__ . '/RegistrationViewModel.php';
-require __DIR__ . '/ApiTokenViewModel.php';
-require __DIR__ . '/ArraysViewModel.php';
-require __DIR__ . '/AfterViewModel.php';
-require __DIR__ . '/InViewModel.php';
-require __DIR__ . '/Request.php';
+require_once __DIR__ . '/RegistrationViewModel.php';
+require_once __DIR__ . '/ApiTokenViewModel.php';
+require_once __DIR__ . '/ArraysViewModel.php';
+require_once __DIR__ . '/AfterViewModel.php';
+require_once __DIR__ . '/InViewModel.php';
+require_once __DIR__ . '/Request.php';
 
 use Illuminate\Translation\Translator;
 
