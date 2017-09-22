@@ -26,6 +26,10 @@ class Required extends Annotation
      */
     public function validate($value, ValidationContext $context)
     {
+        if (null === $value) {
+            return ValidationResult::NotOk('The $value is null!');
+        }
+
         if (is_array($value)) {
             return $this->validateArray($value);
         }
@@ -34,7 +38,7 @@ class Required extends Annotation
             return $this->validateString($value);
         }
 
-        throw new \InvalidArgumentException('value type does not fall into expected range.');
+        throw new \InvalidArgumentException('Type of $value does not fall into expected range.');
     }
 
     private function validateArray($value)
