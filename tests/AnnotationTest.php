@@ -4,6 +4,7 @@ use SolveX\ViewModel\KeyValueDataSource;
 use SolveX\ViewModel\ValidationException;
 
 require_once __DIR__ . '/RegistrationViewModel.php';
+require_once __DIR__ . '/SimpleViewModel.php';
 require_once __DIR__ . '/ArraysViewModel.php';
 require_once __DIR__ . '/Request.php';
 
@@ -75,5 +76,20 @@ class AnnotationTest extends PHPUnit_Framework_TestCase
                 $this->assertFalse($model->isValid());
             }
         }
+    }
+
+    public function test_default_value()
+    {
+        $model = new SimpleViewModel(new KeyValueDataSource([
+            //'FirstName' => 'test'
+        ]));
+        $this->assertEquals('Joe', $model->FirstName);
+        $this->assertTrue($model->isValid());
+
+        $model = new SimpleViewModel(new KeyValueDataSource([
+            'FirstName' => 'Jack'
+        ]));
+        $this->assertEquals('Jack', $model->FirstName);
+        $this->assertTrue($model->isValid());
     }
 }

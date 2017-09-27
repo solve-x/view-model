@@ -9,6 +9,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use SolveX\ViewModel\Annotations\Annotation;
 use SolveX\ViewModel\Annotations\DataType;
+use SolveX\ViewModel\Annotations\DefaultValue;
 use SolveX\ViewModel\Annotations\Required;
 
 /**
@@ -150,49 +151,87 @@ class ViewModel
         $reader = new AnnotationReader();
 
         foreach ($properties as $property) {
-            $annotations = $reader->getPropertyAnnotations($property);
-            $required = $this->containsRequiredAnnotation($annotations);
-            $present = $this->data->has($property->getName());
-            $propertyName = $property->getName();
-            $isAbsentBoolean = false;
-
-            if (! $present) {
-                if ($this->containsBoolTypeAnnotation($annotations)) {
-                    $isAbsentBoolean = true;
-                } else if ($required) {
-                    $this->isValid = false;
-                    continue;
-                } else {
-                    continue;
-                }
-            }
-
-            $value = $isAbsentBoolean ? 'false' :
-                $this->data->get($propertyName);
-
-            $this->processAnnotations(
-                $annotations,
-                $propertyName,
-                $value
-            );
+            $this->validateAndSetProperty($property, $reader);
         }
     }
 
     /**
-     * Returns true when Annotations\Required is among given $annotations.
-     *
+     * @param ReflectionProperty $property
+     * @param AnnotationReader $reader
+     * @throws \RuntimeException
+     */
+    private function validateAndSetProperty($property, $reader)
+    {
+        $annotations = $reader->getPropertyAnnotations($property);
+        $required = $this->containsAnnotation($annotations, Required::class);
+        $hasDefault = $this->containsAnnotation($annotations, DefaultValue::class);
+        $isBooleanType = $this->containsBoolTypeAnnotation($annotations);
+        $present = $this->data->has($property->getName());
+
+        $isMissingAndValid = !$present && !$hasDefault && !$required && !$isBooleanType;
+        if ($isMissingAndValid) {
+            return;
+        }
+
+        $isMissingAndIsRequired = !$present && !$hasDefault && $required;
+        if ($isMissingAndIsRequired) {
+            $this->isValid = false;
+            return;
+        }
+
+        $isAbsentBoolean = !$present && !$hasDefault && $isBooleanType;
+        $propertyName = $property->getName();
+
+        if ($isAbsentBoolean) {
+            $value = 'false';
+        } else if ($hasDefault && ! $present) {
+            $value = $this->getDefaultValueFromAnnotation($annotations);
+        } else {
+            $value = $this->data->get($propertyName);
+        }
+
+        $this->processAnnotations(
+            $annotations,
+            $propertyName,
+            $value
+        );
+    }
+
+    /**
      * @param Annotation[] $annotations
+     * @return null|string
+     */
+    protected function getDefaultValueFromAnnotation($annotations)
+    {
+        $annotation = $this->getAnnotation($annotations, DefaultValue::class);
+
+        return null === $annotation ? null : $annotation->value;
+    }
+
+    /**
+     * @param Annotation[] $annotations
+     * @param string $className
      * @return bool
      */
-    protected function containsRequiredAnnotation($annotations)
+    protected function containsAnnotation($annotations, $className)
+    {
+        return null !== $this->getAnnotation($annotations, $className);
+    }
+
+    /**
+     * @param Annotation[] $annotations
+     * @param string $className
+     * @return null|Annotation
+     */
+    protected function getAnnotation($annotations, $className)
     {
         foreach ($annotations as $annotation) {
-            if ($annotation instanceof Required) {
-                return true;
+            if (is_a($annotation, $className)) {
+                return $annotation;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**

@@ -2,7 +2,6 @@
 
 use SolveX\ViewModel\Annotations as VM;
 use SolveX\ViewModel\Annotations\DataType;
-use SolveX\ViewModel\ViewModel;
 
 class RegistrationViewModel extends \SolveX\ViewModel\NonThrowableViewModel
 {
