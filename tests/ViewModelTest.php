@@ -96,31 +96,6 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertNull($model->Age);
     }
 
-    public function test_min_annotation()
-    {
-        $tests = [
-            ['Age' => '15', 'Valid' => false],
-            ['Age' => '18', 'Valid' => true],
-            ['Age' => '19', 'Valid' => true],
-        ];
-
-        foreach ($tests as $test) {
-            $model = new RegistrationViewModel(new Request([
-                'FirstName' => 'Jack',
-                'LastName' => 'Smith',
-                'Age' => $test['Age'],
-                'Password' => 'my password',
-                'RepeatedPassword' => 'my password',
-            ]));
-
-            if ($test['Valid']) {
-                $this->assertTrue($model->isValid());
-            } else {
-                $this->assertFalse($model->isValid());
-            }
-        }
-    }
-
     public function test_invalid_property_is_null()
     {
         $model = new RegistrationViewModel(new Request([

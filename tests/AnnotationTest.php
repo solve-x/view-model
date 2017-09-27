@@ -1,6 +1,7 @@
 <?php
 
 use SolveX\ViewModel\KeyValueDataSource;
+use SolveX\ViewModel\ValidationException;
 
 require_once __DIR__ . '/RegistrationViewModel.php';
 require_once __DIR__ . '/ArraysViewModel.php';
@@ -42,13 +43,37 @@ class AnnotationTest extends PHPUnit_Framework_TestCase
 
     public function test_no_empty_array()
     {
-        $model = new ArraysViewModel(new Request([
+        $this->expectException(ValidationException::class);
+
+        new ArraysViewModel(new Request([
             'IdsArray' => [1, 2, 3],
             'PricesArray' => [15.4, -8.3],
             'NamesArray' => []
         ]));
+    }
 
-        $this->assertFalse($model->isValid());
-        $this->assertNull($model->NamesArray);
+    public function test_min_annotation()
+    {
+        $tests = [
+            ['Age' => '15', 'Valid' => false],
+            ['Age' => '18', 'Valid' => true],
+            ['Age' => '19', 'Valid' => true],
+        ];
+
+        foreach ($tests as $test) {
+            $model = new RegistrationViewModel(new Request([
+                'FirstName' => 'Jack',
+                'LastName' => 'Smith',
+                'Age' => $test['Age'],
+                'Password' => 'my password',
+                'RepeatedPassword' => 'my password',
+            ]));
+
+            if ($test['Valid']) {
+                $this->assertTrue($model->isValid());
+            } else {
+                $this->assertFalse($model->isValid());
+            }
+        }
     }
 }

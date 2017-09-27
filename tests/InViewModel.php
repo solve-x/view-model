@@ -2,9 +2,8 @@
 
 use SolveX\ViewModel\Annotations as VM;
 use SolveX\ViewModel\Annotations\DataType;
-use SolveX\ViewModel\ViewModel;
 
-class InViewModel extends ViewModel
+class InViewModel extends \SolveX\ViewModel\NonThrowableViewModel
 {
     /**
      * @VM\Required

@@ -50,18 +50,21 @@ class ViewModel
     /**
      * @var Translator|null
      */
-    protected $translator = null;
+    protected $translator;
 
     /**
      * @var DataSourceInterface|null
      */
-    protected $data = null;
+    protected $data;
 
     /**
      * ViewModel constructor.
      *
      * @param DataSourceInterface|null $data
      * @param Translator|null $translator
+     * @throws \SolveX\ViewModel\ValidationException
+     * @throws \ReflectionException
+     * @throws \RuntimeException
      */
     public function __construct(DataSourceInterface $data = null, Translator $translator = null)
     {
@@ -79,6 +82,10 @@ class ViewModel
 
         $this->registerAnnotationAutoloader();
         $this->validateAndSetProperties();
+
+        if (! $this->isValid()) {
+            throw new ValidationException('Validation failed!');
+        }
     }
 
     /**
@@ -123,6 +130,7 @@ class ViewModel
      * Uses reflection to retrieve properties of the extended class.
      *
      * @return ReflectionProperty[]
+     * @throws \ReflectionException
      */
     protected function getProperties()
     {
@@ -133,6 +141,8 @@ class ViewModel
     /**
      * Retrieves annotations for each property,
      * and processes those annotations.
+     * @throws \ReflectionException
+     * @throws \RuntimeException
      */
     protected function validateAndSetProperties()
     {
