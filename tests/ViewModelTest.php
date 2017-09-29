@@ -8,8 +8,12 @@ require_once __DIR__ . '/ArraysViewModel.php';
 require_once __DIR__ . '/AfterViewModel.php';
 require_once __DIR__ . '/InViewModel.php';
 require_once __DIR__ . '/Request.php';
+require_once __DIR__ . '/AddressViewModel.php';
+require_once __DIR__ . '/NestedViewModel.php';
 
 use Illuminate\Translation\Translator;
+use SolveX\ViewModel\KeyValueDataSource;
+use SolveX\ViewModel\ValidationException;
 
 class ViewModelTest extends PHPUnit_Framework_TestCase
 {
@@ -101,7 +105,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 15,
+            'Age' => '15',
             'Password' => 'my password',
             'RepeatedPassword' => 'my password',
         ]));
@@ -115,7 +119,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 15,
+            'Age' => '15',
             'Password' => 'my password',
             'RepeatedPassword' => 'my password',
         ]));
@@ -123,21 +127,20 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($model->isValid());
         $errors = $model->getErrors();
         $this->assertArrayHasKey('Age', $errors);
-        $this->assertCount(2, $errors['Age']);
-        $this->assertEquals('Input not a string!', $errors['Age'][0]);
-        $this->assertEquals('Value less than min required!', $errors['Age'][1]);
+        $this->assertCount(1, $errors['Age']);
+        $this->assertEquals('Value less than min required!', $errors['Age'][0]);
     }
 
     public function test_invalid_property_translated_errors()
     {
         $translator = Mockery::mock(Translator::class);
         $translator->shouldReceive('trans')
-            ->andReturnValues(['Vrednost ni število!', 'Vrednost manj od zahtevane!']);
+            ->andReturnValues(['Vrednost manj od zahtevane!']);
 
         $model = new RegistrationViewModel(new Request([
             'FirstName' => 'Jack',
             'LastName' => 'Smith',
-            'Age' => 15,
+            'Age' => '15',
             'Password' => 'my password',
             'RepeatedPassword' => 'my password',
         ]), $translator);
@@ -145,9 +148,8 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($model->isValid());
         $errors = $model->getErrors();
         $this->assertArrayHasKey('Age', $errors);
-        $this->assertCount(2, $errors['Age']);
-        $this->assertEquals('Vrednost ni število!', $errors['Age'][0]);
-        $this->assertEquals('Vrednost manj od zahtevane!', $errors['Age'][1]);
+        $this->assertCount(1, $errors['Age']);
+        $this->assertEquals('Vrednost manj od zahtevane!', $errors['Age'][0]);
     }
 
     public function test_compare_annotation()
@@ -263,5 +265,57 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
 
         $this->assertFalse($model->isValid());
         $this->assertNull($model->Place);
+    }
+
+    public function test_nested_view_model()
+    {
+        $model = new NestedViewModel(new KeyValueDataSource([
+            'FirstName' => 'Jack',
+            'LastName' => null,
+            'Age' => '26',
+            'Address' => [
+                'Street' => 'Arsenal Way',
+                'HouseNumber' => '15asd',
+                'ParentAddress' => [
+                    'Street' => 'Nekaj',
+                    'HouseNumber' => '15C',
+                    'RegisteredUser' => [
+                        'FirstName' => null,
+                        'LastName' => 'Chech',
+                        'Age' => '15'
+                    ]
+                ],
+                'RegisteredUser' => [
+                    'FirstName' => 'Olivier',
+                    'LastName' => null,
+                    'Age' => '16'
+                ]
+            ]
+        ]));
+
+        $this->assertFalse($model->isValid());
+
+        $this->assertEmpty($model->LastName);
+        $this->assertEmpty($model->Age);
+        $this->assertEmpty($model->Address->HouseNumber);
+        $this->assertEmpty($model->Address->RegisteredUser->LastName);
+        $this->assertEmpty($model->Address->RegisteredUser->Age);
+        $this->assertEmpty($model->Address->ParentAddress->HouseNumber);
+        $this->assertEmpty($model->Address->ParentAddress->RegisteredUser->FirstName);
+        $this->assertEmpty($model->Address->ParentAddress->RegisteredUser->Age);
+
+        $errors = $model->getErrors();
+        $this->assertCount(4, $errors);
+
+        $this->assertEquals('The $value is null!', $errors['LastName'][0]);
+        $this->assertEquals('Value less than min required!', $errors['Age'][0]);
+        $this->assertEquals('Value not an int!', $errors['Address']['HouseNumber'][0]);
+        $this->assertEquals('Value not an int!', $errors['Address']['ParentAddress']['HouseNumber'][0]);
+        $this->assertEquals('The $value is null!', $errors['Address']['ParentAddress']['RegisteredUser']['FirstName'][0]);
+        $this->assertEquals('Value less than min required!', $errors['Address']['ParentAddress']['RegisteredUser']['Age'][0]);
+        $this->assertEquals('The $value is null!', $errors['Address']['RegisteredUser']['LastName'][0]);
+        $this->assertEquals('Value less than min required!', $errors['Address']['RegisteredUser']['Age'][0]);
+        $this->assertEquals('BackupAddress is required and missing!', $errors['BackupAddress'][0]);
+
     }
 }

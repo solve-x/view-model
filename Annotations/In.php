@@ -16,8 +16,8 @@ class In extends Annotation
     {
         if (in_array($value, $this->Values)) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Must be one of specified values!');
         }
+        
+        return ValidationResult::NotOkSingle('Must be one of specified values!');
     }
 }

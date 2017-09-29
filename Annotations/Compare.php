@@ -17,13 +17,13 @@ class Compare extends Annotation
         $data = $context->getData();
 
         if (! $data->has($this->OtherProperty)) {
-            return ValidationResult::NotOk('Other property missing!');
+            return ValidationResult::NotOkSingle('Other property missing!');
         }
 
-        if ($value == $data->get($this->OtherProperty)) {
+        if ($value === $data->get($this->OtherProperty)) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value does not match the value of another property!');
         }
+
+        return ValidationResult::NotOkSingle('Value does not match the value of another property!');
     }
 }

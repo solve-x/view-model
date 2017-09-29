@@ -27,7 +27,7 @@ class Required extends Annotation
     public function validate($value, ValidationContext $context)
     {
         if (null === $value) {
-            return ValidationResult::NotOk('The $value is null!');
+            return ValidationResult::NotOkSingle('The $value is null!');
         }
 
         if (is_array($value)) {
@@ -48,7 +48,7 @@ class Required extends Annotation
         }
 
         if (!$this->AllowEmptyArrays) {
-            return ValidationResult::NotOk('The value is an empty array!');
+            return ValidationResult::NotOkSingle('The value is an empty array!');
         }
 
         return ValidationResult::Ok();
@@ -62,7 +62,7 @@ class Required extends Annotation
         }
 
         if (!$this->AllowEmptyStrings) {
-            return ValidationResult::NotOk('The value is an empty string!');
+            return ValidationResult::NotOkSingle('The value is an empty string!');
         }
 
         return ValidationResult::Ok();

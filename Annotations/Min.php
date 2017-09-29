@@ -16,8 +16,8 @@ class Min extends Annotation
     {
         if ($value >= $this->Min) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value less than min required!');
         }
+
+        return ValidationResult::NotOkSingle('Value less than min required!');
     }
 }

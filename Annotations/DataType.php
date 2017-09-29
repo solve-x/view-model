@@ -3,9 +3,11 @@
 namespace SolveX\ViewModel\Annotations;
 
 use RuntimeException;
+use SolveX\ViewModel\KeyValueDataSource;
 use SolveX\ViewModel\ValidationContext;
 use SolveX\ViewModel\ValidationResult;
 use Carbon\Carbon;
+use SolveX\ViewModel\ViewModel;
 
 /**
  * @Annotation
@@ -39,6 +41,20 @@ class DataType extends Annotation
         throw new RuntimeException('Unexpected DataType!');
     }
 
+    public static function isComplex(DataType $annotation)
+    {
+        return ! in_array($annotation->Type, [
+            self::String,
+            self::Int,
+            self::Float,
+            self::Bool,
+            self::Carbon,
+            self::IntArray,
+            self::FloatArray,
+            self::StringArray
+        ], true);
+    }
+
     protected function validateString(/** @noinspection PhpUnusedParameterInspection */$value)
     {
         return ValidationResult::Ok();
@@ -47,11 +63,11 @@ class DataType extends Annotation
     protected function validateInt($value)
     {
         if (!is_string($value)) {
-            return ValidationResult::NotOk('Input not a string!');
+            return ValidationResult::NotOkSingle('Input not a string!');
         }
 
         if (false === filter_var($value, FILTER_VALIDATE_INT)) {
-            return ValidationResult::NotOk('Value not an int!');
+            return ValidationResult::NotOkSingle('Value not an int!');
         }
 
         return ValidationResult::Ok();
@@ -60,11 +76,11 @@ class DataType extends Annotation
     private function validateFloat($value)
     {
         if (!is_string($value)) {
-            return ValidationResult::NotOk('Input not a string!');
+            return ValidationResult::NotOkSingle('Input not a string!');
         }
 
         if (false === filter_var($value, FILTER_VALIDATE_FLOAT)) {
-            return ValidationResult::NotOk('Value not a float!');
+            return ValidationResult::NotOkSingle('Value not a float!');
         }
 
         return ValidationResult::Ok();
@@ -80,7 +96,7 @@ class DataType extends Annotation
             return ValidationResult::Ok();
         }
 
-        return ValidationResult::NotOk('Value not a bool!');
+        return ValidationResult::NotOkSingle('Value not a bool!');
     }
 
     /**
@@ -100,7 +116,7 @@ class DataType extends Annotation
             return ValidationResult::Ok();
         }
 
-        return ValidationResult::NotOk('Value does not match ISO 8601 date format!');
+        return ValidationResult::NotOkSingle('Value does not match ISO 8601 date format!');
     }
 
     private function validateIntArray($value)
@@ -116,7 +132,7 @@ class DataType extends Annotation
     private function validateStringArray($value)
     {
         if (!is_array($value)) {
-            return ValidationResult::NotOk('Value not an array!');
+            return ValidationResult::NotOkSingle('Value not an array!');
         }
 
         return ValidationResult::Ok();
@@ -125,12 +141,12 @@ class DataType extends Annotation
     private function validateArray($value, $type, $callback, $callbackParams = null)
     {
         if (!is_array($value)) {
-            return ValidationResult::NotOk('Value not an array!');
+            return ValidationResult::NotOkSingle('Value not an array!');
         }
 
         foreach ($value as $element) {
             if (!$callback($element, $callbackParams)) {
-                return ValidationResult::NotOk("Value :value not {$type}!", [
+                return ValidationResult::NotOkSingle("Value :value not {$type}!", [
                     'value' => $element
                 ]);
             }
@@ -161,9 +177,20 @@ class DataType extends Annotation
             case static::StringArray: return $value;
         }
 
+        if (is_array($value) ||
+            is_subclass_of($value, ViewModel::class)
+        ) {
+            return $this->complexTransform($value);
+        }
+
         throw new RuntimeException('Unexpected DataType!');
     }
 
+    /**
+     * @param array $array
+     * @param callable $callback
+     * @return array
+     */
     private function arrayTransform($array, $callback)
     {
         foreach ($array as $key => &$value) {
@@ -171,5 +198,10 @@ class DataType extends Annotation
         }
 
         return $array;
+    }
+
+    private function complexTransform($value)
+    {
+        return new $this->Type(new KeyValueDataSource($value));
     }
 }

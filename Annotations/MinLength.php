@@ -16,8 +16,8 @@ class MinLength extends Annotation
     {
         if (strlen($value) >= $this->MinLength) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value not long enough!');
         }
+
+        return ValidationResult::NotOkSingle('Value not long enough!');
     }
 }

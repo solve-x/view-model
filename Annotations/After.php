@@ -20,8 +20,8 @@ class After extends Annotation
 
         if ($value->greaterThan($threshold)) {
             return ValidationResult::Ok();
-        } else {
-            return ValidationResult::NotOk('Value is not after a specific date!');
         }
+
+        return ValidationResult::NotOkSingle('Value is not after a specific date!');
     }
 }

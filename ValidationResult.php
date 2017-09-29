@@ -9,29 +9,21 @@ class ValidationResult
      *
      * @var bool
      */
-    private $ok = false;
+    private $ok;
 
     /**
-     * @var string|null
+     * @var ValidationResultError[]|null
      */
-    private $error = null;
+    private $errors;
 
     /**
-     * @var array
-     */
-    private $replacements = [];
-
-    /**
-     * Private ValidationResult constructor.
-     *
      * @param bool $ok
-     * @param string $error
+     * @param array $errors
      */
-    private function __construct($ok, $error = null, $replacements = [])
+    private function __construct($ok, $errors = null)
     {
         $this->ok = $ok;
-        $this->error = $error;
-        $this->replacements = $replacements;
+        $this->errors = $errors;
     }
 
     /**
@@ -48,11 +40,11 @@ class ValidationResult
      * Returns the error (string) together with replacements
      * (inserted into the error string during translation).
      *
-     * @return array
+     * @return ValidationResultError[]
      */
-    public function getErrorWithReplacements()
+    public function getErrors()
     {
-        return [$this->error, $this->replacements];
+        return $this->errors;
     }
 
     /**
@@ -68,12 +60,34 @@ class ValidationResult
     /**
      * Factory method. Validation failed.
      *
+     * @param ValidationResultError[] $errors
+     * @return ValidationResult
+     */
+    public static function NotOk($errors)
+    {
+        return new self(false, $errors);
+    }
+
+    /**
+     * Factory method. Validation failed.
+     *
      * @param string $error
      * @param array $replacements
      * @return ValidationResult
      */
-    public static function NotOk($error, $replacements = [])
+    public static function NotOkSingle($error, array $replacements = [])
     {
-        return new self(false, $error, $replacements);
+        $result = new self(false, [
+            new ValidationResultError($error, $replacements)
+        ]);
+
+        return $result;
+    }
+
+    public static function nested(ValidationException $nestedException)
+    {
+        $errors = $nestedException->getErrors();
+
+        return new self(false, $errors);
     }
 }

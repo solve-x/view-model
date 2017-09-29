@@ -2,6 +2,8 @@
 
 namespace SolveX\ViewModel;
 
+use Illuminate\Translation\Translator;
+
 class ValidationContext
 {
     /**
@@ -10,13 +12,20 @@ class ValidationContext
     private $data;
 
     /**
+     * @var Translator
+     */
+    private $translator;
+
+    /**
      * ValidationContext constructor.
      *
      * @param DataSourceInterface $data
+     * @param Translator|null $translator
      */
-    public function __construct(DataSourceInterface $data)
+    public function __construct(DataSourceInterface $data, Translator $translator = null)
     {
         $this->data = $data;
+        $this->translator = $translator;
     }
 
     /**
@@ -25,5 +34,13 @@ class ValidationContext
     public function getData()
     {
         return $this->data;
+    }
+
+    /**
+     * @return Translator
+     */
+    public function getTranslator()
+    {
+        return $this->translator;
     }
 }
