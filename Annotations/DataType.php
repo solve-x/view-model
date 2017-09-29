@@ -62,6 +62,10 @@ class DataType extends Annotation
 
     protected function validateInt($value)
     {
+        if (null === $value) {
+            return ValidationResult::Ok();
+        }
+
         if (!is_string($value)) {
             return ValidationResult::NotOkSingle('Input not a string!');
         }
@@ -75,6 +79,10 @@ class DataType extends Annotation
 
     private function validateFloat($value)
     {
+        if (null === $value) {
+            return ValidationResult::Ok();
+        }
+
         if (!is_string($value)) {
             return ValidationResult::NotOkSingle('Input not a string!');
         }
@@ -88,6 +96,10 @@ class DataType extends Annotation
 
     private function validateBool($value)
     {
+        if (null === $value) {
+            return ValidationResult::Ok();
+        }
+
         $booleanStrings = [
             '0', '1', 'on', 'off', 'yes', 'no', 'true', 'false'
         ];
@@ -108,6 +120,10 @@ class DataType extends Annotation
      */
     private function validateCarbon($value)
     {
+        if (null === $value) {
+            return ValidationResult::Ok();
+        }
+
         $regex = '/^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])' .
             '(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|' .
             '24\:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/';
@@ -131,6 +147,10 @@ class DataType extends Annotation
 
     private function validateStringArray($value)
     {
+        if (null === $value) {
+            return ValidationResult::Ok();
+        }
+
         if (!is_array($value)) {
             return ValidationResult::NotOkSingle('Value not an array!');
         }
@@ -140,6 +160,10 @@ class DataType extends Annotation
 
     private function validateArray($value, $type, $callback, $callbackParams = null)
     {
+        if (null === $value) {
+            return ValidationResult::Ok();
+        }
+
         if (!is_array($value)) {
             return ValidationResult::NotOkSingle('Value not an array!');
         }
@@ -161,6 +185,10 @@ class DataType extends Annotation
      */
     public function transform($value)
     {
+        if (null === $value) {
+            return null;
+        }
+
         switch ($this->Type) {
             case static::String: return $value;
             case static::Int: return (int) $value;
@@ -202,6 +230,10 @@ class DataType extends Annotation
 
     private function complexTransform($value)
     {
+        if (null === $value) {
+            return null;
+        }
+
         return new $this->Type(new KeyValueDataSource($value));
     }
 }

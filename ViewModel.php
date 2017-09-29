@@ -2,8 +2,6 @@
 
 namespace SolveX\ViewModel;
 
-use Carbon\Carbon;
-use Mockery\Exception;
 use ReflectionClass;
 use ReflectionProperty;
 use Illuminate\Contracts\Translation\Translator;
@@ -69,8 +67,10 @@ class ViewModel
      * @throws \ReflectionException
      * @throws \RuntimeException
      */
-    public function __construct(DataSourceInterface $data = null, Translator $translator = null)
-    {
+    public function __construct(
+        DataSourceInterface $data = null,
+        Translator $translator = null
+    ) {
         // $data is null when a viewmodel class (extending this one) was
         // instantiated manually with new MyViewModel().
         // In this case we do nothing.
@@ -87,7 +87,11 @@ class ViewModel
         $this->validateAndSetProperties();
 
         if (! $this->isValid()) {
-            throw new ValidationException('Validation failed!', $this->errors);
+            throw new ValidationException(
+                'Validation failed!',
+                $this->errors,
+                $this
+            );
         }
     }
 
@@ -99,18 +103,12 @@ class ViewModel
      */
     protected function validateAndSetProperties()
     {
-        //echo microtime()."START: ".get_class($this).PHP_EOL;
-        $properties = $this->getProperties();
-
         $reader = new AnnotationReader();
 
+        $properties = $this->getProperties();
         foreach ($properties as $property) {
-            //echo get_class($this)."->".$property->getName().PHP_EOL;
-            //echo "Validate and set: ".$property->getName().PHP_EOL;
             $this->validateAndSetProperty($property, $reader);
-            //echo "End Validate and set: ".$property->getName().PHP_EOL;
         }
-        //echo microtime()."STOP: ".get_class($this).PHP_EOL;
     }
 
     /**
@@ -219,6 +217,7 @@ class ViewModel
 
         } catch (ValidationException $exception) {
             $errors = $exception->getErrors();
+            $instance = $exception->getModel();
         }
     }
 

@@ -198,7 +198,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         ]));
 
         $this->assertTrue($model->isValid());
-        $this->assertTrue($model->ValidFrom instanceof Carbon);
+        $this->assertInstanceOf(Carbon::class, $model->ValidFrom);
         $this->assertEquals($model->ValidFrom, new Carbon('2017-06-01'));
     }
 
@@ -231,7 +231,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         ]));
 
         $this->assertTrue($model->isValid());
-        $this->assertTrue($model->DateOfArrival instanceof Carbon);
+        $this->assertInstanceOf(Carbon::class, $model->DateOfArrival);
         $this->assertEquals($model->DateOfArrival, new Carbon('2017-06-03 08:00:00'));
 
         $model = new AfterViewModel(new Request([
@@ -270,6 +270,7 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
     public function test_nested_view_model()
     {
         $model = new NestedViewModel(new KeyValueDataSource([
+            'ID' => null,
             'FirstName' => 'Jack',
             'LastName' => null,
             'Age' => '26',
@@ -297,6 +298,10 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
 
         $this->assertEmpty($model->LastName);
         $this->assertEmpty($model->Age);
+        $this->assertNotEmpty($model->Address);
+        $this->assertNotEmpty($model->Address->RegisteredUser);
+        $this->assertNotEmpty($model->Address->ParentAddress);
+        $this->assertNotEmpty($model->Address->ParentAddress->RegisteredUser);
         $this->assertEmpty($model->Address->HouseNumber);
         $this->assertEmpty($model->Address->RegisteredUser->LastName);
         $this->assertEmpty($model->Address->RegisteredUser->Age);

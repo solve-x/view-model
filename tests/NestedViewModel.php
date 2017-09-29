@@ -6,6 +6,12 @@ use SolveX\ViewModel\Annotations\DataType;
 class NestedViewModel extends \SolveX\ViewModel\NonThrowableViewModel
 {
     /**
+     * @VM\DataType(DataType::Int)
+     * @var int
+     */
+    public $ID;
+
+    /**
      * @VM\Required
      * @VM\DataType(DataType::String)
      * @var string

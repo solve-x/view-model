@@ -12,17 +12,24 @@ class ValidationException extends Exception
     private $errors;
 
     /**
+     * @var null|ViewModel
+     */
+    private $model;
+
+    /**
      * Constructor.
      *
      * @param string $message The internal exception message
      * @param array $errors
+     * @param ViewModel $model
      * @param int $code The internal exception code
      * @param Exception $previous The previous exception
      */
-    public function __construct($message = null, $errors = [], $code = 0, Exception $previous = null)
+    public function __construct($message = null, $errors = [], $model = null, $code = 0, Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->errors = $errors;
+        $this->model = $model;
     }
 
     /**
@@ -31,5 +38,13 @@ class ValidationException extends Exception
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    /**
+     * @return null|ViewModel
+     */
+    public function getModel()
+    {
+        return $this->model;
     }
 }

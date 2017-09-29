@@ -7,7 +7,7 @@ use RuntimeException;
 interface DataSourceInterface
 {
     /**
-     * Determine if the data source contains a non-empty value for a key.
+     * Determine if the data source contains a key.
      *
      * @param string $key
      * @return bool
@@ -18,7 +18,7 @@ interface DataSourceInterface
      * Retrieve an item from the data source.
      *
      * @param string $key Lookup key.
-     * @return string|array
+     * @return string|array|null
      * @throws RuntimeException When $key is missing.
      */
     public function get($key);
