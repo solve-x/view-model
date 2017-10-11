@@ -2,7 +2,9 @@
 
 [Model validation in ASP.NET Core MVC](https://docs.microsoft.com/en-us/aspnet/core/mvc/models/validation)
 
-Current proposal:
+Note: this library is still in beta. We might make incompatible changes until version 1.
+
+Short example:
 
 ```php
 <?php
@@ -42,13 +44,29 @@ class UserController
 {
     public function register(RegistrationViewModel $model)
     {
-        if (! $model->isValid()) {
-            $errors = $model->getErrors();
-            // Respond with errors.
-        }
+        // At this point $model is valid.
+        // In case validation fails, an exception is thrown during model construction.
 
         // $model->FirstName
         // $model->Age
     }
 }
 ```
+
+## Laravel integration
+
+## Validation annotations
+
+- DataType(DataType::String), DataType(DataType::Int)
+- Required
+- DefaultValue
+- Min
+- MinLength
+- In
+- After
+
+## Nested models
+
+## DataSourceInterface
+
+## Custom annotations

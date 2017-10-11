@@ -205,9 +205,7 @@ class DataType extends Annotation
             case static::StringArray: return $value;
         }
 
-        if (is_array($value) ||
-            is_subclass_of($value, ViewModel::class)
-        ) {
+        if (is_array($value) || is_subclass_of($value, ViewModel::class)) {
             return $this->complexTransform($value);
         }
 

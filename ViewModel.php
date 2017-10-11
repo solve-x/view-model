@@ -8,9 +8,6 @@ use Illuminate\Contracts\Translation\Translator;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use SolveX\ViewModel\Annotations\Annotation;
-use SolveX\ViewModel\Annotations\DataType;
-use SolveX\ViewModel\Annotations\DefaultValue;
-use SolveX\ViewModel\Annotations\Required;
 
 /**
  * See ViewModel::registerAnnotationAutoloader().
@@ -67,14 +64,11 @@ class ViewModel
      * @throws \ReflectionException
      * @throws \RuntimeException
      */
-    public function __construct(
-        DataSourceInterface $data = null,
-        Translator $translator = null
-    ) {
+    public function __construct(DataSourceInterface $data = null, Translator $translator = null)
+    {
         // $data is null when a viewmodel class (extending this one) was
         // instantiated manually with new MyViewModel().
-        // In this case we do nothing.
-        // This is useful for testing.
+        // In this case we do nothing. This is useful for testing.
         if ($data === null) {
             return;
         }
@@ -87,200 +81,8 @@ class ViewModel
         $this->validateAndSetProperties();
 
         if (! $this->isValid()) {
-            throw new ValidationException(
-                'Validation failed!',
-                $this->errors,
-                $this
-            );
+            throw new ValidationException('Validation failed!', $this->errors, $this);
         }
-    }
-
-    /**
-     * Retrieves annotations for each property,
-     * and processes those annotations.
-     * @throws \ReflectionException
-     * @throws \RuntimeException
-     */
-    protected function validateAndSetProperties()
-    {
-        $reader = new AnnotationReader();
-
-        $properties = $this->getProperties();
-        foreach ($properties as $property) {
-            $this->validateAndSetProperty($property, $reader);
-        }
-    }
-
-    /**
-     * @param ReflectionProperty $property
-     * @param AnnotationReader $reader
-     * @throws \RuntimeException
-     */
-    private function validateAndSetProperty($property, $reader)
-    {
-        $annotations = $reader->getPropertyAnnotations($property);
-
-        $required = $this->containsAnnotation($annotations, Required::class);
-        $hasDefault = $this->containsAnnotation($annotations, DefaultValue::class);
-        $isBooleanType = $this->containsBoolTypeAnnotation($annotations);
-        $present = $this->data->has($property->getName());
-
-        $isMissingAndValid = !$present && !$hasDefault && !$required && !$isBooleanType;
-        if ($isMissingAndValid) {
-            return;
-        }
-
-        $propertyName = $property->getName();
-        $isMissingAndIsRequired = !$present && !$hasDefault && $required;
-        if ($isMissingAndIsRequired) {
-            $this->isValid = false;
-            $this->errors[$propertyName][] = "{$propertyName} is required and missing!";
-            return;
-        }
-
-        // NOTE: this handles cases where unchecked checkboxes do not send
-        // values back to the server
-        $isAbsentBoolean = !$present && !$hasDefault && $isBooleanType;
-
-        if ($isAbsentBoolean) {
-            $value = 'false';
-        } else if ($hasDefault && ! $present) {
-            $value = $this->getDefaultValueFromAnnotation($annotations);
-        } else {
-            $value = $this->data->get($propertyName);
-        }
-
-        if (!is_string($value) && !is_array($value) && null !== $value) {
-            $providedType = gettype($value);
-            throw new \RuntimeException("The value must be a string or array, {$providedType} given!");
-        }
-
-        $this->processAnnotations(
-            $annotations,
-            $propertyName,
-            $value
-        );
-    }
-
-    /**
-     * @param Annotation[] $annotations
-     * @param string $propertyName
-     * @param mixed $value
-     * @throws \RuntimeException
-     */
-    protected function processAnnotations($annotations, $propertyName, $value)
-    {
-        $dataType = $this->getAnnotation($annotations, DataType::class);
-        if (null === $dataType) {
-            throw new \RuntimeException('Data type not found!');
-        }
-
-        $validationContext = new ValidationContext($this->data, $this->translator);
-        if (DataType::isComplex($dataType)) {
-            $this->validateAndSetComplex(
-                $dataType->Type,
-                $value,
-                $validationContext,
-                $this->{$propertyName},
-                $this->errors[$propertyName]
-            );
-            return;
-        }
-
-        $this->validateAndSetSimple(
-            $annotations,
-            $propertyName,
-            $value,
-            $validationContext
-        );
-    }
-
-    /**
-     * @param string $type
-     * @param array $value
-     * @param ValidationContext $context
-     * @param $instance
-     * @param array $errors
-     */
-    protected function validateAndSetComplex($type, $value, $context, &$instance, &$errors)
-    {
-        try {
-            $instance = new $type(
-                new KeyValueDataSource($value),
-                $context->getTranslator()
-            );
-
-            // Non-throwable view models are possible!
-            if (! $instance->isValid()) {
-                $errors = $instance->getErrors();
-            }
-
-        } catch (ValidationException $exception) {
-            $errors = $exception->getErrors();
-            $instance = $exception->getModel();
-        }
-    }
-
-    /**
-     * @param Annotation[] $annotations
-     * @param string $propertyName
-     * @param string $value
-     * @param ValidationContext $validationContext
-     */
-    private function validateAndSetSimple($annotations, $propertyName, $value, $validationContext)
-    {
-        // Validate
-        $validationSuccessful = true;
-        foreach ($annotations as $annotation) {
-            $valid = $this->processAnnotation(
-                $annotation,
-                $propertyName,
-                $value,
-                $validationContext
-            );
-
-            if (! $valid) {
-                $validationSuccessful = false;
-            }
-        }
-
-        // Transform if validation succeeds
-        if (! $validationSuccessful) {
-            $this->isValid = false;
-            return;
-        }
-
-        foreach ($annotations as $annotation) {
-            $value = $annotation->transform($value);
-        }
-
-        $this->{$propertyName} = $value;
-    }
-    
-    /**
-     * Runs the validation of a particular annotation.
-     *
-     * @param Annotation $annotation
-     * @param string $propertyName
-     * @param mixed $value
-     * @param ValidationContext $context
-     * @return bool
-     */
-    protected function processAnnotation($annotation, $propertyName, $value, ValidationContext $context)
-    {
-        $validationResult = $annotation->validate($value, $context);
-
-        if (! $validationResult->isOk()) {
-            $errors = $validationResult->getErrors();
-            foreach ($errors as $error) {
-                $this->errors[$propertyName][] = $this->getErrorTranslation(
-                    $error->getMessage(),
-                    $error->getReplacements()
-                );
-            }
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -304,6 +106,252 @@ class ViewModel
     }
 
     /**
+     * Retrieves annotations for each property, and processes those annotations.
+     *
+     * @throws \ReflectionException
+     * @throws \RuntimeException
+     */
+    protected function validateAndSetProperties()
+    {
+        $reader = new AnnotationReader();
+        foreach ($this->getPropertiesByReflection() as $reflectionProperty) {
+            $property = $this->createProperty($reader, $reflectionProperty);
+            $shouldContinue = $this->propertyValueMissingAndInvalid($property);
+            if (! $shouldContinue) {
+                continue;
+            }
+            $value = $this->determinePropertyValue($property);
+            $this->assertPropertyAndValueOk($property, $value);
+            $this->applyAnnotations($property, $value);
+        }
+    }
+
+    /**
+     * @param AnnotationReader $reader
+     * @param ReflectionProperty $reflectionProperty
+     * @return Property
+     */
+    protected function createProperty(AnnotationReader $reader, ReflectionProperty $reflectionProperty)
+    {
+        $annotations = $reader->getPropertyAnnotations($reflectionProperty);
+        return new Property($reflectionProperty, $annotations, $this->data);
+    }
+
+    /**
+     * @param Property $propertyInfo
+     * @throws \RuntimeException
+     */
+    protected function validateAndSetProperty($propertyInfo)
+    {
+
+
+//        if (DataType::isComplex($dataType)) {
+//            $this->validateAndSetComplex(
+//                $dataType->Type,
+//                $value,
+//                $validationContext,
+//                $this->{$propertyName},
+//                $this->errors[$propertyName]
+//            );
+//            return;
+//        }
+
+//        $this->validateAndSetSimple(
+//            $annotations,
+//            $propertyName,
+//            $value,
+//            $validationContext
+//        );
+    }
+
+    /**
+     * @param Property $property
+     * @return bool
+     */
+    protected function propertyValueMissingAndInvalid(Property $property)
+    {
+        if ($property->isMissingAndValid()) {
+            return false;
+        }
+
+        if ($property->isMissing() && $property->isRequired()) {
+            $name = $property->getName();
+            $this->errors[$name][] = "{$name} is required and missing!";
+            $this->isValid = false;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param Property $property
+     * @param string $value
+     * @throws \RuntimeException
+     */
+    protected function assertPropertyAndValueOk(Property $property, $value)
+    {
+        $this->assertPropertyHasDataType($property);
+        $this->assertValueType($value);
+    }
+
+    /**
+     * @param $value
+     * @throws \RuntimeException
+     */
+    protected function assertValueType($value)
+    {
+        if (! is_string($value) && ! is_array($value) && null !== $value) {
+            $providedType = gettype($value);
+            throw new \RuntimeException(
+                "The value provided by the DataSourceInterface must be a string or array, {$providedType} given!"
+            );
+        }
+    }
+
+    /**
+     * @param Property $property
+     * @throws \RuntimeException
+     */
+    protected function assertPropertyHasDataType(Property $property)
+    {
+        if (null === $property->getDataType()) {
+            throw new \RuntimeException('Data type annotation not found!');
+        }
+    }
+
+    /**
+     * @param Property $property
+     * @return array|null|string
+     * @throws \RuntimeException
+     */
+    protected function determinePropertyValue(Property $property)
+    {
+        // NOTE: this handles cases where unchecked checkboxes do not send
+        // values back to the server
+        if ($property->isAbsentBoolean()) {
+            return 'false';
+        }
+
+        if ($property->isAbsentWithDefault()) {
+            return $property->getDefaultValue();
+        }
+
+        return $this->data->get($property->getName());
+    }
+
+    /**
+     * @param Property $property
+     * @param $value
+     */
+    protected function applyAnnotations(Property $property, $value)
+    {
+        $validationSuccessful = true;
+        foreach ($property->getAnnotations() as $annotation) {
+            $valid = $this->processAnnotation($annotation, $property->getName(), $value);
+            if (! $valid) {
+                $validationSuccessful = false;
+            }
+        }
+
+        if (! $validationSuccessful) {
+            $this->isValid = false;
+            return;
+        }
+
+        $value = $this->transformValue($property, $value);
+
+        $this->{$property->getName()} = $value;
+    }
+
+    /**
+     * @param string $type
+     * @param array $value
+     * @param ValidationContext $context
+     * @param $instance
+     * @param array $errors
+     */
+  /*  protected function validateAndSetComplex($type, $value, $context, &$instance, &$errors)
+    {
+        try {
+            $instance = new $type(
+                new KeyValueDataSource($value),
+                $context->getTranslator()
+            );
+
+            // Non-throwable view models are possible!
+            if (! $instance->isValid()) {
+                $errors = $instance->getErrors();
+            }
+
+        } catch (ValidationException $exception) {
+            $errors = $exception->getErrors();
+            $instance = $exception->getModel();
+        }
+    }*/
+
+    /**
+     * Runs the validation of a particular annotation.
+     *
+     * @param Annotation $annotation
+     * @param string $propertyName
+     * @param mixed $value
+     * @return bool
+     */
+    protected function processAnnotation($annotation, $propertyName, $value)
+    {
+        $context = new ValidationContext($this->data, $this->translator);
+        $validationResult = $annotation->validate($value, $context);
+
+        if ($validationResult->isOk()) {
+            return true;
+        }
+
+        $errors = $validationResult->getErrors();
+        foreach ($errors as $error) {
+            $this->errors[$propertyName][] = $this->getErrorTranslation(
+                $error->getMessage(),
+                $error->getReplacements()
+            );
+        }
+
+        return false;
+    }
+
+    protected function processNestedDataTypeAnnotation()
+    {
+        try {
+            $instance = new $type(
+                new KeyValueDataSource($value),
+                $context->getTranslator()
+            );
+
+            // Non-throwable view models are possible!
+            if (! $instance->isValid()) {
+                $errors = $instance->getErrors();
+            }
+
+        } catch (ValidationException $exception) {
+            $errors = $exception->getErrors();
+            $instance = $exception->getModel();
+        }
+    }
+
+    /**
+     * @param Property $property
+     * @param $value
+     * @return mixed
+     */
+    protected function transformValue(Property $property, $value)
+    {
+        foreach ($property->getAnnotations() as $annotation) {
+            $value = $annotation->transform($value);
+        }
+
+        return $value;
+    }
+
+    /**
      * Doctrine Annotations library uses its own autoloading mechanism.
      * Here we use a suggestion from the library's source code and just pass
      * the autoloading to class_exists built-in function which results in composer doing
@@ -322,70 +370,14 @@ class ViewModel
     }
 
     /**
-     * Uses reflection to retrieve properties of the extended class.
+     * Uses reflection to retrieve public properties of the extended class.
      *
      * @return ReflectionProperty[]
      * @throws \ReflectionException
      */
-    protected function getProperties()
+    protected function getPropertiesByReflection()
     {
-        $reflectionClass = new ReflectionClass(static::class);
-        return $reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC);
-    }
-
-    /**
-     * @param Annotation[] $annotations
-     * @return null|string
-     */
-    protected function getDefaultValueFromAnnotation($annotations)
-    {
-        $annotation = $this->getAnnotation($annotations, DefaultValue::class);
-
-        return null === $annotation ? null : $annotation->value;
-    }
-
-    /**
-     * @param Annotation[] $annotations
-     * @param string $className
-     * @return bool
-     */
-    protected function containsAnnotation($annotations, $className)
-    {
-        return null !== $this->getAnnotation($annotations, $className);
-    }
-
-    /**
-     * @param Annotation[] $annotations
-     * @param string $className
-     * @return null|Annotation|DataType
-     */
-    protected function getAnnotation($annotations, $className)
-    {
-        foreach ($annotations as $annotation) {
-            if (is_a($annotation, $className)) {
-                return $annotation;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Returns true when Annotations\DataType Bool is among given $annotations.
-     *
-     * @param Annotation[] $annotations
-     * @return bool
-     */
-    protected function containsBoolTypeAnnotation($annotations)
-    {
-        foreach ($annotations as $annotation) {
-            if ($annotation instanceof DataType &&
-                DataType::Bool === $annotation->Type) {
-                return true;
-            }
-        }
-
-        return false;
+        return (new ReflectionClass(static::class))->getProperties(ReflectionProperty::IS_PUBLIC);
     }
 
     /**
