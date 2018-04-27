@@ -4,6 +4,23 @@ namespace SolveX\ViewModel;
 
 use RuntimeException;
 
+/**
+ * Returns true is the given array is considered associative.
+ *
+ * @param array $arr
+ * @return bool
+ */
+function is_associative($arr)
+{
+    foreach ($arr as $key => $_) {
+        if (is_string($key)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 class KeyValueDataSource implements DataSourceInterface
 {
     /**
@@ -35,11 +52,17 @@ class KeyValueDataSource implements DataSourceInterface
      * Retrieve an item from the data source.
      *
      * @param string $key Lookup key.
-     * @return string|array
+     * @return string|array|KeyValueDataSource
      * @throws RuntimeException When $key is missing.
      */
     public function get($key)
     {
-        return $this->data[$key];
+        $value = $this->data[$key];
+
+        if (is_array($value) && is_associative($value)) {
+            return new KeyValueDataSource($value);
+        }
+
+        return $value;
     }
 }

@@ -3,7 +3,9 @@
 namespace SolveX\ViewModel;
 
 use ReflectionClass;
+use ReflectionException;
 use ReflectionProperty;
+use RuntimeException;
 
 /**
  * Class ViewModel.
@@ -19,8 +21,9 @@ class ViewModel
      * ViewModel constructor.
      *
      * @param DataSourceInterface|null $data
-     * @throws \ReflectionException
-     * @throws \RuntimeException
+     * @throws RuntimeException
+     * @throws ReflectionException
+     * @throws ViewModelException
      */
     public function __construct(DataSourceInterface $data = null)
     {
@@ -41,20 +44,26 @@ class ViewModel
     /**
      * Maps source data to properties of the extended class.
      *
-     * @throws \ReflectionException
-     * @throws \RuntimeException
+     * @throws RuntimeException
+     * @throws ViewModelException
+     * @throws ReflectionException
      */
     protected function setProperties()
     {
         foreach ($this->getPropertiesByReflection() as $reflectionProperty) {
             $property = new Property($reflectionProperty);
             $propertyName = $property->getName();
-            $valuePresent = $this->data->has($propertyName);
 
-            if (! $valuePresent) {
-                if ($property->isRequiredBoolean()) {
+            if (! $this->data->has($propertyName)) {
+                if ($property->isNonNullableBoolean()) {
                     $this->{$propertyName} = false;
+                    continue;
                 }
+
+                if (! $property->isNullable()) {
+                    throw new ViewModelException("Expected value missing for property {$propertyName}!");
+                }
+
                 continue;
             }
 
@@ -67,7 +76,7 @@ class ViewModel
      * Uses reflection to retrieve public properties of the extended class.
      *
      * @return ReflectionProperty[]
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function getPropertiesByReflection()
     {

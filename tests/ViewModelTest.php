@@ -69,6 +69,30 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
         $this->assertNull($model->Age);
     }
 
+    /**
+     * @throws ReflectionException
+     */
+    public function test_nested_models()
+    {
+        $model = new AddressViewModel(new KeyValueDataSource([
+            'Street' => 'Houseberry',
+            'HouseNumber' => '20',
+            'RegisteredUser' => [
+                'FirstName' => 'Jack',
+                'LastName' => 'Smith',
+                'Password' => 'test',
+                'RepeatedPassword' => 'test',
+            ],
+        ]));
+
+        $this->assertSame('Houseberry', $model->Street);
+        $this->assertSame(20, $model->HouseNumber);
+        $this->assertNull($model->ParentAddress);
+        $this->assertSame('Jack', $model->RegisteredUser->FirstName);
+        $this->assertSame('Smith', $model->RegisteredUser->LastName);
+        $this->assertNull($model->RegisteredUser->Age);
+    }
+
     /*
         public function test_array_data_type()
         {
@@ -110,61 +134,5 @@ class ViewModelTest extends PHPUnit_Framework_TestCase
             $this->assertEquals($model->ValidFrom, new Carbon('2017-06-01'));
         }
 
-        public function test_nested_view_model()
-        {
-            $model = new NestedViewModel(new KeyValueDataSource([
-                'ID' => null,
-                'FirstName' => 'Jack',
-                'LastName' => null,
-                'Age' => '26',
-                'Address' => [
-                    'Street' => 'Arsenal Way',
-                    'HouseNumber' => '15asd',
-                    'ParentAddress' => [
-                        'Street' => 'Nekaj',
-                        'HouseNumber' => '15C',
-                        'RegisteredUser' => [
-                            'FirstName' => null,
-                            'LastName' => 'Chech',
-                            'Age' => '15'
-                        ]
-                    ],
-                    'RegisteredUser' => [
-                        'FirstName' => 'Olivier',
-                        'LastName' => null,
-                        'Age' => '16'
-                    ]
-                ]
-            ]));
-
-            $this->assertFalse($model->isValid());
-
-            $this->assertEmpty($model->LastName);
-            $this->assertEmpty($model->Age);
-            $this->assertNotEmpty($model->Address);
-            $this->assertNotEmpty($model->Address->RegisteredUser);
-            $this->assertNotEmpty($model->Address->ParentAddress);
-            $this->assertNotEmpty($model->Address->ParentAddress->RegisteredUser);
-            $this->assertEmpty($model->Address->HouseNumber);
-            $this->assertEmpty($model->Address->RegisteredUser->LastName);
-            $this->assertEmpty($model->Address->RegisteredUser->Age);
-            $this->assertEmpty($model->Address->ParentAddress->HouseNumber);
-            $this->assertEmpty($model->Address->ParentAddress->RegisteredUser->FirstName);
-            $this->assertEmpty($model->Address->ParentAddress->RegisteredUser->Age);
-
-            $errors = $model->getErrors();
-            $this->assertCount(4, $errors);
-
-            $this->assertEquals('The $value is null!', $errors['LastName'][0]);
-            $this->assertEquals('Value less than min required!', $errors['Age'][0]);
-            $this->assertEquals('Value not an int!', $errors['Address']['HouseNumber'][0]);
-            $this->assertEquals('Value not an int!', $errors['Address']['ParentAddress']['HouseNumber'][0]);
-            $this->assertEquals('The $value is null!', $errors['Address']['ParentAddress']['RegisteredUser']['FirstName'][0]);
-            $this->assertEquals('Value less than min required!', $errors['Address']['ParentAddress']['RegisteredUser']['Age'][0]);
-            $this->assertEquals('The $value is null!', $errors['Address']['RegisteredUser']['LastName'][0]);
-            $this->assertEquals('Value less than min required!', $errors['Address']['RegisteredUser']['Age'][0]);
-            $this->assertEquals('BackupAddress is required and missing!', $errors['BackupAddress'][0]);
-
-        }
     */
 }

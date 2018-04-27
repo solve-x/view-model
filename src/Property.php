@@ -2,6 +2,13 @@
 
 namespace SolveX\ViewModel;
 
+use ReflectionProperty;
+use RuntimeException;
+
+/**
+ * Class Property stores information about a ViewModel property,
+ * like type and nullability.
+ */
 class Property
 {
     /**
@@ -27,33 +34,29 @@ class Property
     /**
      * Property constructor.
      *
-     * @param \ReflectionProperty $property
+     * @param ReflectionProperty $reflectionProperty
      */
-    public function __construct($property)
+    public function __construct($reflectionProperty)
     {
-        $this->name = $property->getName();
-
-        $this->processDocComment($property);
+        $this->name = $reflectionProperty->getName();
+        $this->processDocComment($reflectionProperty);
     }
 
     /**
-     * @param \ReflectionProperty $property
+     * @param ReflectionProperty $reflectionProperty
      */
-    protected function processDocComment($property)
+    protected function processDocComment($reflectionProperty)
     {
-        $docComment = $property->getDocComment();
-
+        $docComment = $reflectionProperty->getDocComment();
         $matched = preg_match('/@var\s+(\S+)/', $docComment, $matches);
-
         $type = $matched ? $matches[1] : null;
-
         $this->nullable = false;
         $this->isBooleanType = $type === 'boolean';
 
         if (strpos($type, '|') !== false) {
             $types = explode('|', $type);
             $this->nullable = in_array('null', $types, true);
-            $this->isBooleanType = in_array('boolean', $types, true);
+            $this->isBooleanType = in_array('boolean', $types, true) || in_array('bool', $types, true);
 
             foreach ($types as $t) {
                 if ($t !== 'null') {
@@ -66,9 +69,15 @@ class Property
         $this->dataType = $type;
     }
 
+    /**
+     * @param $value
+     * @return string|bool|int|ViewModel
+     * @throws ViewModelException
+     * @throws RuntimeException
+     */
     public function getMappedValue($value)
     {
-        if ($this->dataType === 'boolean') {
+        if ($this->isBooleanType) {
             return (
                 $value === true ||
                 $value === 'true' ||
@@ -78,8 +87,12 @@ class Property
             );
         }
 
-        if ($this->dataType === 'int') {
+        if ($this->dataType === 'int' || $this->dataType === 'integer') {
             return (int) $value;
+        }
+
+        if ($this->isNestedViewModel()) {
+            return new $this->dataType($value);
         }
 
         return $value;
@@ -112,7 +125,7 @@ class Property
     /**
      * @return bool
      */
-    public function isRequiredBoolean()
+    public function isNonNullableBoolean()
     {
         return $this->isBooleanType && ! $this->nullable;
     }
@@ -128,8 +141,19 @@ class Property
     /**
      * @return bool
      */
-    public function hasComplexDataType()
+    public function isNestedViewModel()
     {
-        return false; //is_subclass_of($this->dataType, DataType::class);
+        $basicTypes = [
+            'bool',
+            'boolean',
+            'string',
+            'int',
+            'integer',
+            'float',
+            'double',
+            'array',
+        ];
+
+        return ! in_array($this->dataType, $basicTypes, true);
     }
 }
