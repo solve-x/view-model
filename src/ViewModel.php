@@ -4,29 +4,9 @@ namespace SolveX\ViewModel;
 
 use ReflectionClass;
 use ReflectionProperty;
-use Illuminate\Contracts\Translation\Translator;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
-use SolveX\ViewModel\Annotations\Annotation;
-
-/**
- * See ViewModel::registerAnnotationAutoloader().
- * This function is used because "static" variables
- * have their own identities in extended classes.
- */
-function register_annotation_autoloader_once()
-{
-    static $autoloaderRegistered = false;
-
-    if (! $autoloaderRegistered) {
-        AnnotationRegistry::registerLoader('class_exists');
-        $autoloaderRegistered = true;
-    }
-}
 
 /**
  * Class ViewModel.
- *
  */
 class ViewModel
 {
@@ -38,19 +18,6 @@ class ViewModel
     protected $isValid = false;
 
     /**
-     * An associative array (mapping property names to arrays of errors)
-     * that is filled if validation failed.
-     *
-     * @var array
-     */
-    protected $errors = [];
-
-    /**
-     * @var Translator|null
-     */
-    protected $translator;
-
-    /**
      * @var DataSourceInterface|null
      */
     protected $data;
@@ -59,12 +26,11 @@ class ViewModel
      * ViewModel constructor.
      *
      * @param DataSourceInterface|null $data
-     * @param Translator|null $translator
      * @throws \SolveX\ViewModel\ValidationException
      * @throws \ReflectionException
      * @throws \RuntimeException
      */
-    public function __construct(DataSourceInterface $data = null, Translator $translator = null)
+    public function __construct(DataSourceInterface $data = null)
     {
         // $data is null when a viewmodel class (extending this one) was
         // instantiated manually with new MyViewModel().
@@ -73,16 +39,12 @@ class ViewModel
             return;
         }
 
-        $this->translator = $translator;
         $this->data = $data;
         $this->isValid = true;
 
-        $this->registerAnnotationAutoloader();
         $this->validateAndSetProperties();
 
-        if (! $this->isValid()) {
-            throw new ValidationException('Validation failed!', $this->errors, $this);
-        }
+        // TODO: optional validation (illuminate/validation)
     }
 
     /**
@@ -349,24 +311,6 @@ class ViewModel
         }
 
         return $value;
-    }
-
-    /**
-     * Doctrine Annotations library uses its own autoloading mechanism.
-     * Here we use a suggestion from the library's source code and just pass
-     * the autoloading to class_exists built-in function which results in composer doing
-     * the actual loading.
-     *
-     * Registration is done only once.
-     *
-     * See
-     * http://docs.doctrine-project.org/projects/doctrine-common/en/latest/reference/annotations.html#introduction
-     * and
-     * https://tinyurl.com/y83wvpcx
-     */
-    protected function registerAnnotationAutoloader()
-    {
-        register_annotation_autoloader_once();
     }
 
     /**

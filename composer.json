@@ -1,7 +1,7 @@
 {
     "name": "solve-x/view-model",
     "type": "library",
-    "description": "PHP model validation inspired by ASP.NET",
+    "description": "A more structured way of processing requests (inspired by ASP.NET)",
     "keywords": [
         "validation"
     ],
@@ -13,7 +13,6 @@
         }
     ],
     "require": {
-        "doctrine/annotations": "1.4",
         "nesbot/carbon": "1.22.1",
         "illuminate/translation": "^5.4"
     },
@@ -23,7 +22,7 @@
     },
     "autoload": {
         "psr-4": {
-            "SolveX\\ViewModel\\": ""
+            "SolveX\\ViewModel\\": "src"
         }
     }
 }
