@@ -9,5 +9,5 @@ class RegistrationViewModel extends ViewModel
     /** @var int|null */ public $Age;
     /** @var string */ public $Password;
     /** @var string */ public $RepeatedPassword;
-    /** @var boolean|null */ public $RememberMe;
+    /** @var boolean */ public $RememberMe;
 }

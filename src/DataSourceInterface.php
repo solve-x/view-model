@@ -18,7 +18,7 @@ interface DataSourceInterface
      * Retrieve an item from the data source.
      *
      * @param string $key Lookup key.
-     * @return string|array|null
+     * @return string|array|DataSourceInterface|null
      * @throws RuntimeException When $key is missing.
      */
     public function get($key);
